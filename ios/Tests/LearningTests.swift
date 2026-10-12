@@ -606,6 +606,24 @@ enum LearningTests {
                   && messages[0]["role"] as? String == "system" && (body["response_format"] as? [String: Any])?["type"] as? String == "json_object"
                   && body["model"] as? String == provider.defaultModel && body["max_tokens"] as? Int == 6000, "\(provider.title) uses chat completions with JSON mode")
         }
+        // Bedrock: Claude's Messages API on bedrock-mantle with a Bedrock API key; no schema, list or fallbacks.
+        let bedrock = ConnectionSettings(provider: .bedrock, apiKey: "bedrock-key", baseURL: "https://bedrock-mantle.eu-central-1.api.aws/anthropic/v1")
+        let bedrockRequest = AnalysisService.makeRequest(source: source, config: bedrock)!
+        let bedrockBody = try! JSONSerialization.jsonObject(with: bedrockRequest.httpBody!) as! [String: Any]
+        let bedrockOutput = bedrockBody["output_config"] as! [String: Any]
+        check(bedrockRequest.url?.absoluteString == "https://bedrock-mantle.eu-central-1.api.aws/anthropic/v1/messages"
+              && bedrockRequest.value(forHTTPHeaderField: "x-api-key") == "bedrock-key" && bedrockRequest.value(forHTTPHeaderField: "anthropic-version") == "2023-06-01",
+              "Bedrock uses the regional Messages endpoint with the key in x-api-key")
+        check(bedrockBody["model"] as? String == "anthropic.claude-opus-5-5" && bedrockOutput["effort"] as? String == "low" && bedrockOutput["format"] == nil
+              && bedrockBody["fallbacks"] == nil && bedrockRequest.value(forHTTPHeaderField: "anthropic-beta") == nil,
+              "Bedrock request has no schema and no server-side fallback")
+        check(ConnectionSettings(provider: .bedrock, apiKey: "k", baseURL: "https://evil.example/anthropic/v1").url == nil
+              && ConnectionSettings(provider: .bedrock, apiKey: "k").url?.host == "bedrock-mantle.us-east-1.api.aws", "Bedrock key goes only to bedrock-mantle hosts")
+        check(ModelCatalog.request(config: bedrock) == nil && AIProvider.bedrock.keyWarning("sk-ant-api03-0123456789") != nil, "no model list on Bedrock; an Anthropic key is flagged")
+        let fencedEnvelope = try! JSONSerialization.data(withJSONObject: ["stop_reason": "end_turn", "content": [["type": "text", "text": "Here it is:\n```json\n" + analysisJSON + "\n```"]]])
+        if case .success = AnalysisService.decode(fencedEnvelope, response: http, error: nil, source: source, provider: .bedrock) {
+            check(true, "JSON inside a code fence is accepted without a schema")
+        } else { check(false, "JSON inside a code fence is accepted without a schema") }
         // Study actions go through the same provider formats.
         let claudeStudy = StudyActionService.makeRequest(.rephrase, source: "I want to buy coffee.", config: claudeConfig)!
         let claudeStudyBody = try! JSONSerialization.jsonObject(with: claudeStudy.httpBody!) as! [String: Any]

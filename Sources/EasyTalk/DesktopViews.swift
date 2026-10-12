@@ -401,7 +401,7 @@ private struct DesktopSettings: View {
                     }
                     if model.connection != nil { Text("Ключ сохранён. Оставь поле пустым, чтобы сохранить прежний.").font(.system(size: 12)).foregroundColor(.secondary) }
                     TextField("Модель", text: $aiModel).textFieldStyle(.roundedBorder)
-                    if provider.editableBaseURL { TextField("https://…aliyuncs.com/compatible-mode/v1", text: $endpoint).textFieldStyle(.roundedBorder) }
+                    if provider.editableBaseURL { TextField(provider.addressHint, text: $endpoint).textFieldStyle(.roundedBorder) }
                     VStack(alignment: .leading, spacing: 10) {
                         Button("Сохранить подключение") { if model.saveConnection(key: key, model: aiModel, provider: provider, baseURL: endpoint) { key = model.connection?.token ?? ""; showKey = false } }.buttonStyle(DesktopAction(primary: true))
                         if model.connection != nil { Button("Отключить AI", action: model.disconnect).buttonStyle(DesktopAction()) }

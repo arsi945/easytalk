@@ -65,15 +65,18 @@ public enum AIRequest {
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         var body: [String: Any]
         switch config.provider {
-        case .anthropic:
+        case .anthropic, .bedrock:
+            // Bedrock API keys go in the same x-api-key header on the bedrock-mantle Messages endpoint.
             request.setValue(config.token, forHTTPHeaderField: "x-api-key")
             request.setValue("2023-06-01", forHTTPHeaderField: "anthropic-version")
             let jsonSchema = (schema["json_schema"] as? [String: Any])?["schema"] ?? [:]
             // Short language edits: low effort keeps the answer fast; thinking stays adaptive.
+            var output: [String: Any] = ["effort": repair ? "medium" : "low"]
+            // Bedrock's Messages endpoint does not take structured outputs; the answer is checked locally instead.
+            if config.provider == .anthropic { output["format"] = ["type": "json_schema", "schema": jsonSchema] }
             body = ["model": config.model, "max_tokens": 16000, "system": system,
-                    "messages": [["role": "user", "content": user]],
-                    "output_config": ["effort": repair ? "medium" : "low", "format": ["type": "json_schema", "schema": jsonSchema]]]
-            if fallbackModels.contains(config.model) {
+                    "messages": [["role": "user", "content": user]], "output_config": output]
+            if config.provider == .anthropic && fallbackModels.contains(config.model) {
                 request.setValue("server-side-fallback-2026-07-01", forHTTPHeaderField: "anthropic-beta")
                 body["fallbacks"] = "default"
             }
@@ -96,15 +99,21 @@ public enum AIRequest {
         return request
     }
 
+    /// Without a schema the model may wrap JSON in a code fence or a sentence: keep the outer object.
+    static func jsonObject(in text: String) -> String? {
+        guard let start = text.firstIndex(of: "{"), let end = text.lastIndex(of: "}"), start < end else { return nil }
+        return String(text[start...end])
+    }
+
     /// The model's JSON text, or nil when the answer was cut off, refused or malformed.
     public static func content(_ data: Data, provider: AIProvider) -> String? {
         guard let envelope = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else { return nil }
         switch provider {
-        case .anthropic:
+        case .anthropic, .bedrock:
             // Refusals and max_tokens leave partial or empty JSON; thinking and fallback blocks are not text.
             guard envelope["stop_reason"] as? String == "end_turn", let blocks = envelope["content"] as? [[String: Any]] else { return nil }
             let text = blocks.filter { $0["type"] as? String == "text" }.compactMap { $0["text"] as? String }.joined()
-            return text.isEmpty ? nil : text
+            return jsonObject(in: text)
         case .openai, .qwen, .deepseek:
             guard let choice = (envelope["choices"] as? [[String: Any]])?.first, choice["finish_reason"] as? String == "stop",
                   let message = choice["message"] as? [String: Any], message["refusal"] == nil || message["refusal"] is NSNull,

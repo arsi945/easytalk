@@ -5,12 +5,14 @@ import EasyTalkCore
 
 /// AI providers the user can connect with a personal key. Each request goes straight from the device to the provider.
 public enum AIProvider: String, Codable, CaseIterable {
-    case openai, anthropic, qwen, deepseek
+    /// `bedrock`: Claude in Amazon Bedrock (Messages API on bedrock-mantle) with a Bedrock API key.
+    case openai, anthropic, bedrock, qwen, deepseek
 
     public var title: String {
         switch self {
         case .openai: return "OpenAI"
         case .anthropic: return "Claude"
+        case .bedrock: return "Bedrock"
         case .qwen: return "Qwen"
         case .deepseek: return "DeepSeek"
         }
@@ -19,6 +21,8 @@ public enum AIProvider: String, Codable, CaseIterable {
         switch self {
         case .openai: return "https://api.openai.com/v1"
         case .anthropic: return "https://api.anthropic.com/v1"
+        // The region is part of the address; it must be one where Claude model access is enabled.
+        case .bedrock: return "https://bedrock-mantle.us-east-1.api.aws/anthropic/v1"
         // Alibaba Model Studio hosts are per region/workspace; Virginia has a shared host.
         case .qwen: return "https://dashscope-us.aliyuncs.com/compatible-mode/v1"
         case .deepseek: return "https://api.deepseek.com"
@@ -28,6 +32,7 @@ public enum AIProvider: String, Codable, CaseIterable {
         switch self {
         case .openai: return "gpt-6-luna"
         case .anthropic: return "claude-opus-5-5"
+        case .bedrock: return "anthropic.claude-opus-5-5"
         case .qwen: return "qwen3.7-plus"
         case .deepseek: return "deepseek-flash"
         }
@@ -37,17 +42,29 @@ public enum AIProvider: String, Codable, CaseIterable {
         switch self {
         case .openai: return ["gpt-6-luna"]
         case .anthropic: return ["claude-opus-5-5", "claude-sonnet-5-5", "claude-haiku-5-5", "claude-fable-5-1"]
+        // Bedrock has no model list endpoint; Opus/Sonnet/Haiku 5.5 may need access granted in the AWS console.
+        case .bedrock: return ["anthropic.claude-opus-5-5", "anthropic.claude-sonnet-5-5", "anthropic.claude-haiku-5-5",
+                               "anthropic.claude-sonnet-5", "anthropic.claude-opus-4-8", "anthropic.claude-haiku-4-5"]
         case .qwen: return ["qwen3.7-plus", "qwen3.8-max", "qwen3.8-flash"]
         case .deepseek: return ["deepseek-flash", "deepseek-v4-pro"]
         }
     }
-    /// Only Qwen needs a user-specific address (region and workspace).
-    public var editableBaseURL: Bool { self == .qwen }
+    /// Qwen (region and workspace) and Bedrock (AWS region) need a user-specific address.
+    public var editableBaseURL: Bool { self == .qwen || self == .bedrock }
+    /// The Messages API format of Anthropic (Claude and Bedrock) instead of chat completions.
+    public var usesMessagesAPI: Bool { self == .anthropic || self == .bedrock }
+    public var addressHint: String {
+        switch self {
+        case .bedrock: return "https://bedrock-mantle.<регион>.api.aws/anthropic/v1"
+        default: return "https://…aliyuncs.com/compatible-mode/v1"
+        }
+    }
     /// The key is sent only to the provider's own hosts.
     func allows(host: String) -> Bool {
         switch self {
         case .openai: return host == "api.openai.com"
         case .anthropic: return host == "api.anthropic.com"
+        case .bedrock: return host.hasPrefix("bedrock-mantle.") && host.hasSuffix(".api.aws")
         case .qwen: return host.hasSuffix(".aliyuncs.com")
         case .deepseek: return host == "api.deepseek.com"
         }
@@ -56,6 +73,7 @@ public enum AIProvider: String, Codable, CaseIterable {
         switch self {
         case .openai: return "Ключ OpenAI: sk-…"
         case .anthropic: return "Ключ Claude API: sk-ant-…"
+        case .bedrock: return "Ключ API Amazon Bedrock"
         case .qwen: return "Ключ Alibaba Model Studio"
         case .deepseek: return "Ключ DeepSeek: sk-…"
         }
@@ -70,6 +88,9 @@ public enum AIProvider: String, Codable, CaseIterable {
         if self == .anthropic && !key.hasPrefix("sk-ant-") {
             return "Ключ Claude начинается с «sk-ant-». Этот — нет: похоже, это ключ другого сервиса."
         }
+        if self == .bedrock && key.hasPrefix("sk-ant-") {
+            return "Это ключ Anthropic (console.anthropic.com). Для Bedrock нужен ключ API из консоли AWS — или выбери «Claude»."
+        }
         if self != .anthropic && key.hasPrefix("sk-ant-") { return "Это ключ Claude, а выбран \(title)." }
         return nil
     }
@@ -77,6 +98,7 @@ public enum AIProvider: String, Codable, CaseIterable {
         switch self {
         case .openai: return "Ключ: platform.openai.com → API keys."
         case .anthropic: return "Ключ: console.anthropic.com → API Keys. Оплата отдельно от подписки Claude."
+        case .bedrock: return "Ключ: консоль AWS → Amazon Bedrock → API keys. В адресе — регион, где включён доступ к моделям Claude (Model access)."
         case .qwen: return "Ключ и адрес своего региона: Alibaba Cloud Model Studio → API Keys. Ключ работает только в своём регионе."
         case .deepseek: return "Ключ: platform.deepseek.com → API keys."
         }
@@ -146,7 +168,8 @@ public struct ConnectionSettings: Codable {
     /// The provider's model list, checked like `url`.
     public var modelsURL: URL? {
         let base = baseURL.trimmingCharacters(in: .whitespacesAndNewlines).trimmingCharacters(in: CharacterSet(charactersIn: "/"))
-        guard !token.isEmpty, var components = URLComponents(string: base + "/models"), components.scheme == "https",
+        // Bedrock has no model list endpoint.
+        guard provider != .bedrock, !token.isEmpty, var components = URLComponents(string: base + "/models"), components.scheme == "https",
               let host = components.host?.lowercased(), provider.allows(host: host),
               components.user == nil, components.password == nil, components.query == nil, components.fragment == nil else { return nil }
         // Anthropic pages by 20 by default.
@@ -157,7 +180,7 @@ public struct ConnectionSettings: Codable {
     /// The request URL, or nil when anything would send the key somewhere unexpected.
     public var url: URL? {
         let base = baseURL.trimmingCharacters(in: .whitespacesAndNewlines).trimmingCharacters(in: CharacterSet(charactersIn: "/"))
-        let path = provider == .anthropic ? "/messages" : "/chat/completions"
+        let path = provider.usesMessagesAPI ? "/messages" : "/chat/completions"
         guard !token.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty, !model.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
               let url = URL(string: base + path), url.scheme == "https", let host = url.host?.lowercased(), provider.allows(host: host),
               url.user == nil, url.password == nil, url.query == nil, url.fragment == nil else { return nil }
@@ -193,6 +216,7 @@ public enum ModelCatalog {
         let model = id.lowercased()
         switch provider {
         case .anthropic: return model.hasPrefix("claude-")
+        case .bedrock: return model.hasPrefix("anthropic.claude")
         case .deepseek: return model.hasPrefix("deepseek")
         case .qwen:
             return model.hasPrefix("qwen") && !["embedding", "tts", "asr", "image", "audio", "realtime"].contains { model.contains($0) }
