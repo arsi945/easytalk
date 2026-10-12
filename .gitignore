@@ -1,0 +1,10 @@
+build/
+.build/
+archive/
+.DS_Store
+**/xcuserdata/
+.env*
+*.p12
+*.p8
+*.mobileprovision
+__pycache__/

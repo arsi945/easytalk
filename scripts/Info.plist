@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleIdentifier</key>
+	<string>app.easytalk.mac</string>
+	<key>CFBundleName</key>
+	<string>easytalk</string>
+	<key>CFBundleDisplayName</key>
+	<string>easytalk</string>
+	<key>CFBundleExecutable</key>
+	<string>easytalk</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleShortVersionString</key>
+	<string>0.4.1</string>
+	<key>CFBundleVersion</key>
+	<string>11</string>
+    <key>NSMicrophoneUsageDescription</key>
+    <string>Записать короткую английскую фразу для локальной проверки звуков.</string>
+	<key>LSMinimumSystemVersion</key>
+	<string>12.0</string>
+	<key>LSUIElement</key>
+	<false/>
+	<key>NSHighResolutionCapable</key>
+	<true/>
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsLocalNetworking</key>
+		<true/>
+	</dict>
+	<key>NSServices</key>
+	<array>
+		<dict>
+			<key>NSMenuItem</key>
+			<dict>
+				<key>default</key>
+				<string>Отправить в easytalk</string>
+			</dict>
+			<key>NSMessage</key>
+			<string>sendToEasyTalk</string>
+			<key>NSPortName</key>
+			<string>easytalk</string>
+			<key>NSSendTypes</key>
+			<array>
+				<string>public.utf8-plain-text</string>
+				<string>NSStringPboardType</string>
+			</array>
+			<key>NSTimeout</key>
+			<string>5000</string>
+		</dict>
+	</array>
+</dict>
+</plist>

@@ -1,0 +1,846 @@
+{
+  "schema_version": 1,
+  "catalog_version": "2026-10-06",
+  "items": [
+    {
+      "id": "second-skill.i1",
+      "term": "Break a leg",
+      "meaning": "Ни пуха ни пера",
+      "example": "Break a leg at your presentation today!",
+      "note": "Пожелание удачи",
+      "category": "Ежедневное общение",
+      "source": "second-skill.zip (архив автора)",
+      "verified": "user_archive",
+      "examples": [
+        "Break a leg at your presentation today!",
+        "You've rehearsed enough—break a leg tonight!"
+      ]
+    },
+    {
+      "id": "second-skill.i2",
+      "term": "Hit the nail on the head",
+      "meaning": "Попасть в точку",
+      "example": "You hit the nail on the head with that idea.",
+      "note": "Абсолютно верное замечание",
+      "category": "Ежедневное общение",
+      "source": "second-skill.zip (архив автора)",
+      "verified": "user_archive",
+      "examples": [
+        "You hit the nail on the head with that idea.",
+        "Her explanation hit the nail on the head."
+      ]
+    },
+    {
+      "id": "second-skill.i3",
+      "term": "Under the weather",
+      "meaning": "Быть не в форме",
+      "example": "I'm feeling a bit under the weather today.",
+      "note": "Плохое самочувствие",
+      "category": "Ежедневное общение",
+      "source": "second-skill.zip (архив автора)",
+      "verified": "user_archive",
+      "examples": [
+        "I'm feeling a bit under the weather today.",
+        "He stayed home because he felt under the weather."
+      ]
+    },
+    {
+      "id": "second-skill.i4",
+      "term": "Bite the bullet",
+      "meaning": "Стиснуть зубы и действовать",
+      "example": "Just bite the bullet and call the doctor.",
+      "note": "Пережить трудное",
+      "category": "Ежедневное общение",
+      "source": "second-skill.zip (архив автора)",
+      "verified": "user_archive",
+      "examples": [
+        "Just bite the bullet and call the doctor.",
+        "We decided to bite the bullet and replace the old server."
+      ]
+    },
+    {
+      "id": "second-skill.i5",
+      "term": "Piece of cake",
+      "meaning": "Проще простого",
+      "example": "Piece of cake once you get the hang of it.",
+      "note": "Очень легко",
+      "category": "Ежедневное общение",
+      "source": "second-skill.zip (архив автора)",
+      "verified": "user_archive",
+      "examples": [
+        "Piece of cake once you get the hang of it.",
+        "The final exercise was a piece of cake for her."
+      ]
+    },
+    {
+      "id": "second-skill.i6",
+      "term": "Spill the beans",
+      "meaning": "Выболтать секрет",
+      "example": "Don't spill the beans about the surprise!",
+      "note": "Раскрыть тайну",
+      "category": "Ежедневное общение",
+      "source": "second-skill.zip (архив автора)",
+      "verified": "user_archive",
+      "examples": [
+        "Don't spill the beans about the surprise!",
+        "He spilled the beans before we could announce the news."
+      ]
+    },
+    {
+      "id": "second-skill.i7",
+      "term": "Cost an arm and a leg",
+      "meaning": "Стоить огромных денег",
+      "example": "Organic vegetables can cost an arm and a leg.",
+      "note": "Очень дорого",
+      "category": "Ежедневное общение",
+      "source": "second-skill.zip (архив автора)",
+      "verified": "user_archive",
+      "examples": [
+        "Organic vegetables can cost an arm and a leg.",
+        "That tiny apartment costs an arm and a leg."
+      ]
+    },
+    {
+      "id": "second-skill.i8",
+      "term": "Let the cat out of the bag",
+      "meaning": "Нечаянно выдать секрет",
+      "example": "She let the cat out of the bag about the party.",
+      "note": "Проговориться",
+      "category": "Ежедневное общение",
+      "source": "second-skill.zip (архив автора)",
+      "verified": "user_archive",
+      "examples": [
+        "She let the cat out of the bag about the party.",
+        "I almost let the cat out of the bag during dinner."
+      ]
+    },
+    {
+      "id": "second-skill.i9",
+      "term": "Once in a blue moon",
+      "meaning": "Крайне редко",
+      "example": "I eat out once in a blue moon now.",
+      "note": "Очень редко",
+      "category": "Ежедневное общение",
+      "source": "second-skill.zip (архив автора)",
+      "verified": "user_archive",
+      "examples": [
+        "I eat out once in a blue moon now.",
+        "They visit our town once in a blue moon."
+      ]
+    },
+    {
+      "id": "second-skill.i10",
+      "term": "The ball is in your court",
+      "meaning": "Твой ход, решение за тобой",
+      "example": "I've done my part — the ball is in your court.",
+      "note": "Зависит от тебя",
+      "category": "Ежедневное общение",
+      "source": "second-skill.zip (архив автора)",
+      "verified": "user_archive",
+      "examples": [
+        "I've done my part — the ball is in your court.",
+        "We have sent you an offer; the ball is in your court."
+      ]
+    },
+    {
+      "id": "second-skill.i11",
+      "term": "Kill two birds with one stone",
+      "meaning": "Убить двух зайцев",
+      "example": "I can kill two birds with one stone by walking to the shop.",
+      "note": "Решить два дела сразу",
+      "category": "Ежедневное общение",
+      "source": "second-skill.zip (архив автора)",
+      "verified": "user_archive",
+      "examples": [
+        "I can kill two birds with one stone by walking to the shop.",
+        "Cycling to work lets me kill two birds with one stone: exercise and save money."
+      ]
+    },
+    {
+      "id": "second-skill.i12",
+      "term": "Bite off more than you can chew",
+      "meaning": "Взяться за непосильное",
+      "example": "Don't bite off more than you can chew at the start.",
+      "note": "Переоценить силы",
+      "category": "Ежедневное общение",
+      "source": "second-skill.zip (архив автора)",
+      "verified": "user_archive",
+      "examples": [
+        "Don't bite off more than you can chew at the start.",
+        "I bit off more than I could chew by taking three courses at once."
+      ]
+    },
+    {
+      "id": "idiom.call-it-a-day",
+      "term": "Call it a day",
+      "meaning": "Закончить на сегодня",
+      "example": "The draft is ready; let's call it a day.",
+      "note": "О работе или другом занятии",
+      "category": "Работа",
+      "source": "https://en.wiktionary.org/wiki/call_it_a_day",
+      "verified": "2026-10-06",
+      "examples": [
+        "The draft is ready; let's call it a day.",
+        "We've finished the report, so let's call it a day."
+      ]
+    },
+    {
+      "id": "idiom.cut-corners",
+      "term": "Cut corners",
+      "meaning": "Экономить за счёт качества",
+      "example": "We cannot cut corners when we test payments.",
+      "note": "О недопустимых упрощениях",
+      "category": "Работа",
+      "source": "https://en.wiktionary.org/wiki/cut_corners",
+      "verified": "2026-10-06",
+      "examples": [
+        "We cannot cut corners when we test payments.",
+        "Don't cut corners when checking the brakes."
+      ]
+    },
+    {
+      "id": "idiom.go-the-extra-mile",
+      "term": "Go the extra mile",
+      "meaning": "Сделать больше ожидаемого",
+      "example": "Good teammates go the extra mile when you need help.",
+      "note": "Дополнительные усилия",
+      "category": "Работа",
+      "source": "https://en.wiktionary.org/wiki/go_the_extra_mile",
+      "verified": "2026-10-06",
+      "examples": [
+        "Good teammates go the extra mile when you need help.",
+        "She always goes the extra mile for her customers."
+      ]
+    },
+    {
+      "id": "idiom.get-the-ball-rolling",
+      "term": "Get the ball rolling",
+      "meaning": "Положить начало делу",
+      "example": "Let's get the ball rolling with a short meeting.",
+      "note": "Запустить процесс",
+      "category": "Работа",
+      "source": "https://en.wiktionary.org/wiki/get_the_ball_rolling",
+      "verified": "2026-10-06",
+      "examples": [
+        "Let's get the ball rolling with a short meeting.",
+        "A short introduction will get the ball rolling."
+      ]
+    },
+    {
+      "id": "idiom.back-to-the-drawing-board",
+      "term": "Back to the drawing board",
+      "meaning": "Вернуться к разработке решения",
+      "example": "This plan won't work; it's back to the drawing board.",
+      "note": "Придумать новый подход",
+      "category": "Работа",
+      "source": "https://en.wiktionary.org/wiki/back_to_the_drawing_board",
+      "verified": "2026-10-06",
+      "examples": [
+        "This plan won't work; it's back to the drawing board.",
+        "The first plan failed, and we went back to the drawing board."
+      ]
+    },
+    {
+      "id": "idiom.back-to-square-one",
+      "term": "Back to square one",
+      "meaning": "Снова в исходной точке",
+      "example": "We lost the file and went back to square one.",
+      "note": "Прогресс пришлось начать заново",
+      "category": "Работа",
+      "source": "https://en.wiktionary.org/wiki/back_to_square_one",
+      "verified": "2026-10-06",
+      "examples": [
+        "We lost the file and went back to square one.",
+        "Losing our notes put us back to square one."
+      ]
+    },
+    {
+      "id": "idiom.learn-the-ropes",
+      "term": "Learn the ropes",
+      "meaning": "Освоить основы дела",
+      "example": "It takes time to learn the ropes in a new team.",
+      "note": "Правила и практические приёмы",
+      "category": "Работа",
+      "source": "https://en.wiktionary.org/wiki/learn_the_ropes",
+      "verified": "2026-10-06",
+      "examples": [
+        "It takes time to learn the ropes in a new team.",
+        "A colleague helped me learn the ropes during my first week."
+      ]
+    },
+    {
+      "id": "idiom.by-the-book",
+      "term": "By the book",
+      "meaning": "Строго по правилам",
+      "example": "Our accountant does everything by the book.",
+      "note": "Следовать установленной процедуре",
+      "category": "Работа",
+      "source": "https://en.wiktionary.org/wiki/by_the_book",
+      "verified": "2026-10-06",
+      "examples": [
+        "Our accountant does everything by the book.",
+        "The inspector wanted every repair done by the book."
+      ]
+    },
+    {
+      "id": "idiom.rule-of-thumb",
+      "term": "Rule of thumb",
+      "meaning": "Практическое приблизительное правило",
+      "example": "As a rule of thumb, keep your message short.",
+      "note": "Полезный ориентир, не точный закон",
+      "category": "Работа",
+      "source": "https://en.wiktionary.org/wiki/rule_of_thumb",
+      "verified": "2026-10-06",
+      "examples": [
+        "As a rule of thumb, keep your message short.",
+        "As a rule of thumb, allow an hour for each interview."
+      ]
+    },
+    {
+      "id": "idiom.on-the-ball",
+      "term": "On the ball",
+      "meaning": "Внимательный и расторопный",
+      "example": "Our new editor is really on the ball.",
+      "note": "Быстро замечать и действовать",
+      "category": "Работа",
+      "source": "https://en.wiktionary.org/wiki/on_the_ball",
+      "verified": "2026-10-06",
+      "examples": [
+        "Our new editor is really on the ball.",
+        "You need to be on the ball when several orders arrive at once."
+      ]
+    },
+    {
+      "id": "idiom.burn-the-midnight-oil",
+      "term": "Burn the midnight oil",
+      "meaning": "Работать допоздна",
+      "example": "I don't want to burn the midnight oil every Friday.",
+      "note": "О ночной работе или учёбе",
+      "category": "Работа",
+      "source": "https://en.wiktionary.org/wiki/burn_the_midnight_oil",
+      "verified": "2026-10-06",
+      "examples": [
+        "I don't want to burn the midnight oil every Friday.",
+        "They burned the midnight oil to finish the design."
+      ]
+    },
+    {
+      "id": "idiom.cut-to-the-chase",
+      "term": "Cut to the chase",
+      "meaning": "Перейти к сути",
+      "example": "Let's cut to the chase: what needs fixing?",
+      "note": "Без долгих вступлений",
+      "category": "Общение",
+      "source": "https://en.wiktionary.org/wiki/cut_to_the_chase",
+      "verified": "2026-10-06",
+      "examples": [
+        "Let's cut to the chase: what needs fixing?",
+        "Let's cut to the chase: can we deliver this week?"
+      ]
+    },
+    {
+      "id": "idiom.break-the-ice",
+      "term": "Break the ice",
+      "meaning": "Снять неловкость в общении",
+      "example": "A simple question can break the ice.",
+      "note": "Начать дружелюбный разговор",
+      "category": "Общение",
+      "source": "https://en.wiktionary.org/wiki/break_the_ice",
+      "verified": "2026-10-06",
+      "examples": [
+        "A simple question can break the ice.",
+        "A simple question helped break the ice at the meeting."
+      ]
+    },
+    {
+      "id": "idiom.beat-around-the-bush",
+      "term": "Beat around the bush",
+      "meaning": "Ходить вокруг да около",
+      "example": "Don't beat around the bush; tell me your decision.",
+      "note": "Избегать главного вопроса",
+      "category": "Общение",
+      "source": "https://en.wiktionary.org/wiki/beat_around_the_bush",
+      "verified": "2026-10-06",
+      "examples": [
+        "Don't beat around the bush; tell me your decision.",
+        "Stop beating around the bush and tell me what happened."
+      ]
+    },
+    {
+      "id": "idiom.on-the-same-page",
+      "term": "On the same page",
+      "meaning": "Одинаково понимать ситуацию",
+      "example": "Let's make sure we're on the same page before we start.",
+      "note": "Общее понимание, особенно в работе",
+      "category": "Общение",
+      "source": "https://en.wiktionary.org/wiki/on_the_same_page",
+      "verified": "2026-10-06",
+      "examples": [
+        "Let's make sure we're on the same page before we start.",
+        "Let's check that we're on the same page before we begin."
+      ]
+    },
+    {
+      "id": "idiom.see-eye-to-eye",
+      "term": "See eye to eye",
+      "meaning": "Быть согласными друг с другом",
+      "example": "We don't always see eye to eye about design.",
+      "note": "Совпадение взглядов",
+      "category": "Общение",
+      "source": "https://en.wiktionary.org/wiki/see_eye_to_eye",
+      "verified": "2026-10-06",
+      "examples": [
+        "We don't always see eye to eye about design.",
+        "They don't see eye to eye on how to spend the budget."
+      ]
+    },
+    {
+      "id": "idiom.read-between-the-lines",
+      "term": "Read between the lines",
+      "meaning": "Уловить скрытый смысл",
+      "example": "Read between the lines: she wants more time.",
+      "note": "Понять то, что прямо не сказано",
+      "category": "Общение",
+      "source": "https://en.wiktionary.org/wiki/read_between_the_lines",
+      "verified": "2026-10-06",
+      "examples": [
+        "Read between the lines: she wants more time.",
+        "You have to read between the lines to understand her reply."
+      ]
+    },
+    {
+      "id": "idiom.in-a-nutshell",
+      "term": "In a nutshell",
+      "meaning": "В двух словах",
+      "example": "In a nutshell, the new version is easier to use.",
+      "note": "Краткое изложение",
+      "category": "Общение",
+      "source": "https://en.wiktionary.org/wiki/in_a_nutshell",
+      "verified": "2026-10-06",
+      "examples": [
+        "In a nutshell, the new version is easier to use.",
+        "In a nutshell, we need more time and a smaller team."
+      ]
+    },
+    {
+      "id": "idiom.ring-a-bell",
+      "term": "Ring a bell",
+      "meaning": "Казаться знакомым",
+      "example": "Does this name ring a bell?",
+      "note": "О смутном воспоминании",
+      "category": "Общение",
+      "source": "https://en.wiktionary.org/wiki/ring_a_bell",
+      "verified": "2026-10-06",
+      "examples": [
+        "Does this name ring a bell?",
+        "That surname rings a bell, but I can't place it."
+      ]
+    },
+    {
+      "id": "idiom.pull-someone-s-leg",
+      "term": "Pull someone's leg",
+      "meaning": "Подшучивать над кем-то",
+      "example": "Relax, I'm just pulling your leg about the price.",
+      "note": "Безобидно разыгрывать",
+      "category": "Общение",
+      "source": "https://en.wiktionary.org/wiki/pull_someone%27s_leg",
+      "verified": "2026-10-06",
+      "examples": [
+        "Relax, I'm just pulling your leg about the price.",
+        "Don't worry—I'm only pulling your leg."
+      ]
+    },
+    {
+      "id": "idiom.speak-of-the-devil",
+      "term": "Speak of the devil",
+      "meaning": "Лёгок на помине",
+      "example": "Speak of the devil! We were just talking about you.",
+      "note": "Человек появился, когда его обсуждали",
+      "category": "Общение",
+      "source": "https://en.wiktionary.org/wiki/speak_of_the_devil",
+      "verified": "2026-10-06",
+      "examples": [
+        "Speak of the devil! We were just talking about you.",
+        "Speak of the devil—here comes our missing teammate!"
+      ]
+    },
+    {
+      "id": "idiom.the-benefit-of-the-doubt",
+      "term": "The benefit of the doubt",
+      "meaning": "Доверие при отсутствии доказательств",
+      "example": "I gave her the benefit of the doubt and waited.",
+      "note": "Не считать человека виноватым заранее",
+      "category": "Общение",
+      "source": "https://en.wiktionary.org/wiki/benefit_of_the_doubt",
+      "verified": "2026-10-06",
+      "examples": [
+        "I gave her the benefit of the doubt and waited.",
+        "I gave him the benefit of the doubt and checked the schedule again."
+      ]
+    },
+    {
+      "id": "idiom.on-cloud-nine",
+      "term": "On cloud nine",
+      "meaning": "На седьмом небе от счастья",
+      "example": "After that call, I was on cloud nine.",
+      "note": "Сильная радость",
+      "category": "Эмоции",
+      "source": "https://en.wiktionary.org/wiki/on_cloud_nine",
+      "verified": "2026-10-06",
+      "examples": [
+        "After that call, I was on cloud nine.",
+        "She was on cloud nine after getting the job."
+      ]
+    },
+    {
+      "id": "idiom.over-the-moon",
+      "term": "Over the moon",
+      "meaning": "Очень счастлив",
+      "example": "I'm over the moon about my new job.",
+      "note": "Радостный разговорный оборот",
+      "category": "Эмоции",
+      "source": "https://en.wiktionary.org/wiki/over_the_moon",
+      "verified": "2026-10-06",
+      "examples": [
+        "I'm over the moon about my new job.",
+        "The whole team was over the moon about the result."
+      ]
+    },
+    {
+      "id": "idiom.down-to-earth",
+      "term": "Down to earth",
+      "meaning": "Практичный и простой в общении",
+      "example": "Our teacher is friendly and down to earth.",
+      "note": "Без высокомерия и отрыва от жизни",
+      "category": "Люди",
+      "source": "https://en.wiktionary.org/wiki/down-to-earth",
+      "verified": "2026-10-06",
+      "examples": [
+        "Our teacher is friendly and down to earth.",
+        "Despite his success, he is still very down to earth."
+      ]
+    },
+    {
+      "id": "idiom.hang-in-there",
+      "term": "Hang in there",
+      "meaning": "Держись, не сдавайся",
+      "example": "Hang in there; the hardest part is almost over.",
+      "note": "Поддержка в трудный момент",
+      "category": "Эмоции",
+      "source": "https://www.ef.com/wwen/english-resources/english-idioms/",
+      "verified": "2026-10-06",
+      "examples": [
+        "Hang in there; the hardest part is almost over.",
+        "Hang in there while we sort out the last few details."
+      ]
+    },
+    {
+      "id": "idiom.take-it-easy",
+      "term": "Take it easy",
+      "meaning": "Не напрягаться, отдыхать",
+      "example": "Take it easy this weekend and get some sleep.",
+      "note": "Совет расслабиться или снизить темп",
+      "category": "Эмоции",
+      "source": "https://en.wiktionary.org/wiki/take_it_easy",
+      "verified": "2026-10-06",
+      "examples": [
+        "Take it easy this weekend and get some sleep.",
+        "Take it easy this weekend and get some rest."
+      ]
+    },
+    {
+      "id": "idiom.a-change-of-heart",
+      "term": "A change of heart",
+      "meaning": "Изменение решения или отношения",
+      "example": "I had a change of heart and joined the course.",
+      "note": "Решить иначе после размышления",
+      "category": "Решения",
+      "source": "https://en.wiktionary.org/wiki/change_of_heart",
+      "verified": "2026-10-06",
+      "examples": [
+        "I had a change of heart and joined the course.",
+        "After seeing the prototype, she had a change of heart."
+      ]
+    },
+    {
+      "id": "idiom.in-hot-water",
+      "term": "In hot water",
+      "meaning": "В неприятностях",
+      "example": "He is in hot water after missing the deadline.",
+      "note": "Обычно из-за своего поступка",
+      "category": "Трудности",
+      "source": "https://en.wiktionary.org/wiki/hot_water",
+      "verified": "2026-10-06",
+      "examples": [
+        "He is in hot water after missing the deadline.",
+        "He got into hot water for missing the deadline."
+      ]
+    },
+    {
+      "id": "idiom.the-last-straw",
+      "term": "The last straw",
+      "meaning": "Последняя капля терпения",
+      "example": "Another cancelled meeting was the last straw.",
+      "note": "Событие, после которого терпение кончается",
+      "category": "Трудности",
+      "source": "https://en.wiktionary.org/wiki/last_straw",
+      "verified": "2026-10-06",
+      "examples": [
+        "Another cancelled meeting was the last straw.",
+        "Another cancelled train was the last straw."
+      ]
+    },
+    {
+      "id": "idiom.a-blessing-in-disguise",
+      "term": "A blessing in disguise",
+      "meaning": "Неудача, обернувшаяся благом",
+      "example": "Missing that flight was a blessing in disguise.",
+      "note": "Хороший результат неприятной ситуации",
+      "category": "Жизнь",
+      "source": "https://en.wiktionary.org/wiki/blessing_in_disguise",
+      "verified": "2026-10-06",
+      "examples": [
+        "Missing that flight was a blessing in disguise.",
+        "Missing that interview turned out to be a blessing in disguise."
+      ]
+    },
+    {
+      "id": "idiom.the-elephant-in-the-room",
+      "term": "The elephant in the room",
+      "meaning": "Очевидная проблема, о которой молчат",
+      "example": "The budget is the elephant in the room.",
+      "note": "Неудобный важный вопрос",
+      "category": "Трудности",
+      "source": "https://en.wiktionary.org/wiki/elephant_in_the_room",
+      "verified": "2026-10-06",
+      "examples": [
+        "The budget is the elephant in the room.",
+        "We need to discuss the elephant in the room: the rising costs."
+      ]
+    },
+    {
+      "id": "idiom.in-the-same-boat",
+      "term": "In the same boat",
+      "meaning": "В одинаковом положении",
+      "example": "We are in the same boat: neither of us has a car.",
+      "note": "Часто об общей трудности",
+      "category": "Люди",
+      "source": "https://en.wiktionary.org/wiki/in_the_same_boat",
+      "verified": "2026-10-06",
+      "examples": [
+        "We are in the same boat: neither of us has a car.",
+        "We're all in the same boat, so let's help one another."
+      ]
+    },
+    {
+      "id": "idiom.a-silver-lining",
+      "term": "A silver lining",
+      "meaning": "Светлая сторона неприятной ситуации",
+      "example": "The delay has a silver lining: we can improve the demo.",
+      "note": "Что хорошего можно найти в плохом",
+      "category": "Жизнь",
+      "source": "https://en.wiktionary.org/wiki/silver_lining",
+      "verified": "2026-10-06",
+      "examples": [
+        "The delay has a silver lining: we can improve the demo.",
+        "The silver lining is that we now have time to practise."
+      ]
+    },
+    {
+      "id": "idiom.out-of-the-blue",
+      "term": "Out of the blue",
+      "meaning": "Совершенно неожиданно",
+      "example": "An old friend called me out of the blue.",
+      "note": "Без предупреждения",
+      "category": "Жизнь",
+      "source": "https://en.wiktionary.org/wiki/out_of_the_blue",
+      "verified": "2026-10-06",
+      "examples": [
+        "An old friend called me out of the blue.",
+        "A former colleague called me out of the blue."
+      ]
+    },
+    {
+      "id": "idiom.so-far-so-good",
+      "term": "So far so good",
+      "meaning": "Пока всё идёт хорошо",
+      "example": "I've used the new keyboard for a day; so far so good.",
+      "note": "О результате на текущий момент",
+      "category": "Жизнь",
+      "source": "https://en.wiktionary.org/wiki/so_far_so_good",
+      "verified": "2026-10-06",
+      "examples": [
+        "I've used the new keyboard for a day; so far so good.",
+        "How is the project going? So far so good."
+      ]
+    },
+    {
+      "id": "idiom.up-in-the-air",
+      "term": "Up in the air",
+      "meaning": "Пока не решено",
+      "example": "Our travel dates are still up in the air.",
+      "note": "Неопределённость планов",
+      "category": "Решения",
+      "source": "https://en.wiktionary.org/wiki/up_in_the_air",
+      "verified": "2026-10-06",
+      "examples": [
+        "Our travel dates are still up in the air.",
+        "The venue is still up in the air because the hall is being repaired."
+      ]
+    },
+    {
+      "id": "idiom.a-long-shot",
+      "term": "A long shot",
+      "meaning": "Маловероятная попытка",
+      "example": "It's a long shot, but I'll ask for an earlier appointment.",
+      "note": "Шанс небольшой, но не нулевой",
+      "category": "Решения",
+      "source": "https://en.wiktionary.org/wiki/long_shot",
+      "verified": "2026-10-06",
+      "examples": [
+        "It's a long shot, but I'll ask for an earlier appointment.",
+        "Winning with only one day to prepare is a long shot."
+      ]
+    },
+    {
+      "id": "idiom.miss-the-boat",
+      "term": "Miss the boat",
+      "meaning": "Упустить возможность",
+      "example": "Apply today or you may miss the boat.",
+      "note": "О возможности, не обязательно о лодке",
+      "category": "Жизнь",
+      "source": "https://en.wiktionary.org/wiki/miss_the_boat",
+      "verified": "2026-10-06",
+      "examples": [
+        "Apply today or you may miss the boat.",
+        "We missed the boat by applying after the deadline."
+      ]
+    },
+    {
+      "id": "idiom.at-the-drop-of-a-hat",
+      "term": "At the drop of a hat",
+      "meaning": "Сразу, без колебаний",
+      "example": "She would help a friend at the drop of a hat.",
+      "note": "Быстрая готовность действовать",
+      "category": "Люди",
+      "source": "https://en.wiktionary.org/wiki/at_the_drop_of_a_hat",
+      "verified": "2026-10-06",
+      "examples": [
+        "She would help a friend at the drop of a hat.",
+        "She would join a hiking trip at the drop of a hat."
+      ]
+    },
+    {
+      "id": "idiom.on-a-shoestring",
+      "term": "On a shoestring",
+      "meaning": "С очень скромным бюджетом",
+      "example": "We built the first version on a shoestring.",
+      "note": "Об ограниченных деньгах",
+      "category": "Деньги",
+      "source": "https://en.wiktionary.org/wiki/on_a_shoestring",
+      "verified": "2026-10-06",
+      "examples": [
+        "We built the first version on a shoestring.",
+        "They started the business on a shoestring."
+      ]
+    },
+    {
+      "id": "idiom.save-for-a-rainy-day",
+      "term": "Save for a rainy day",
+      "meaning": "Откладывать на трудные времена",
+      "example": "I try to save for a rainy day every month.",
+      "note": "Финансовый запас",
+      "category": "Деньги",
+      "source": "https://en.wiktionary.org/wiki/save_something_for_a_rainy_day",
+      "verified": "2026-10-06",
+      "examples": [
+        "I try to save for a rainy day every month.",
+        "I save a little each month for a rainy day."
+      ]
+    },
+    {
+      "id": "idiom.put-all-your-eggs-in-one-basket",
+      "term": "Put all your eggs in one basket",
+      "meaning": "Поставить всё на один вариант",
+      "example": "Don't put all your eggs in one basket when you invest.",
+      "note": "Не сосредоточивать весь риск в одном месте",
+      "category": "Решения",
+      "source": "https://en.wiktionary.org/wiki/put_all_one%27s_eggs_in_one_basket",
+      "verified": "2026-10-06",
+      "examples": [
+        "Don't put all your eggs in one basket when you invest.",
+        "Don't put all your eggs in one basket when looking for work."
+      ]
+    },
+    {
+      "id": "idiom.on-thin-ice",
+      "term": "On thin ice",
+      "meaning": "В рискованном положении",
+      "example": "After two warnings, he is on thin ice.",
+      "note": "Ещё одна ошибка может иметь последствия",
+      "category": "Трудности",
+      "source": "https://en.wiktionary.org/wiki/on_thin_ice",
+      "verified": "2026-10-06",
+      "examples": [
+        "After two warnings, he is on thin ice.",
+        "You're on thin ice after arriving late three times."
+      ]
+    },
+    {
+      "id": "idiom.take-it-with-a-pinch-of-salt",
+      "term": "Take it with a pinch of salt",
+      "meaning": "Отнестись скептически",
+      "example": "Take that estimate with a pinch of salt.",
+      "note": "Не принимать слова полностью на веру",
+      "category": "Решения",
+      "source": "https://en.wiktionary.org/wiki/pinch_of_salt",
+      "verified": "2026-10-06",
+      "examples": [
+        "Take that estimate with a pinch of salt.",
+        "Take those dramatic headlines with a pinch of salt."
+      ]
+    },
+    {
+      "id": "idiom.sit-on-the-fence",
+      "term": "Sit on the fence",
+      "meaning": "Не выбирать сторону",
+      "example": "You can't sit on the fence forever; choose a plan.",
+      "note": "Не принимать решение в споре",
+      "category": "Решения",
+      "source": "https://en.wiktionary.org/wiki/sit_on_the_fence",
+      "verified": "2026-10-06",
+      "examples": [
+        "You can't sit on the fence forever; choose a plan.",
+        "He keeps sitting on the fence instead of choosing a plan."
+      ]
+    },
+    {
+      "id": "idiom.easier-said-than-done",
+      "term": "Easier said than done",
+      "meaning": "Легче сказать, чем сделать",
+      "example": "Writing every day is easier said than done.",
+      "note": "Выполнить сложнее, чем предложить",
+      "category": "Трудности",
+      "source": "https://en.wiktionary.org/wiki/easier_said_than_done",
+      "verified": "2026-10-06",
+      "examples": [
+        "Writing every day is easier said than done.",
+        "Staying calm in a crisis is easier said than done."
+      ]
+    },
+    {
+      "id": "idiom.the-best-of-both-worlds",
+      "term": "The best of both worlds",
+      "meaning": "Преимущества двух вариантов сразу",
+      "example": "Remote work gives me the best of both worlds.",
+      "note": "Совместить два плюса",
+      "category": "Жизнь",
+      "source": "https://en.wiktionary.org/wiki/best_of_both_worlds",
+      "verified": "2026-10-06",
+      "examples": [
+        "Remote work gives me the best of both worlds.",
+        "Working near home gives her the best of both worlds."
+      ]
+    }
+  ]
+}

@@ -1,0 +1,68 @@
+{
+  "finish_reason": "stop",
+  "response": {
+    "corrected": "Yesterday I went to the office and met my friend. We drank coffee and discussed our new project. I want to agree on the deadline and send him the documents tomorrow.",
+    "diffs": [
+      {
+        "corrected": "went",
+        "end": 15,
+        "explanation": "Для рассказа о вчерашнем дне нужен глагол в прошедшем времени: went.",
+        "id": "d1",
+        "original": "go",
+        "start": 13,
+        "type": "error"
+      },
+      {
+        "corrected": "met",
+        "end": 46,
+        "explanation": "Здесь также нужен прошедший вариант глагола: met.",
+        "id": "d2",
+        "original": "meet",
+        "start": 42,
+        "type": "error"
+      },
+      {
+        "corrected": "drank",
+        "end": 67,
+        "explanation": "Поскольку речь о вчерашнем событии, используйте прошедшую форму drank.",
+        "id": "d3",
+        "original": "drink",
+        "start": 62,
+        "type": "error"
+      },
+      {
+        "corrected": "discussed",
+        "end": 86,
+        "explanation": "В прошедшем времени правильная форма этого глагола — discussed.",
+        "id": "d4",
+        "original": "discuss",
+        "start": 79,
+        "type": "error"
+      },
+      {
+        "corrected": "agree on",
+        "end": 117,
+        "explanation": "В английском для значения «договориться о сроке» естественно сказать agree on.",
+        "id": "d5",
+        "original": "договориться",
+        "start": 105,
+        "type": "unknown_word"
+      }
+    ],
+    "schema_version": 1,
+    "translated": "Вчера я сходил в офис и встретился с другом. Мы выпили кофе и обсудили наш новый проект. Я хочу договориться о сроках и отправить ему документы завтра.",
+    "vocabulary": [
+      {
+        "kind": "phrase",
+        "meaning": "договориться о чём-либо",
+        "term": "agree on"
+      },
+      {
+        "kind": "word",
+        "meaning": "крайний срок; срок выполнения",
+        "term": "deadline"
+      }
+    ]
+  },
+  "source": "Yesterday I go to the office and meet my friend. We drink coffee and discuss our new project. I want to договориться about the deadline and send him the documents tomorrow."
+}

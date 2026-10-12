@@ -1,0 +1,85 @@
+# Облачная проверка без подписи и без секретов: тесты Core, Mac-сборка, iOS-сборка.
+# Живой AI не вызывается; ключи не нужны.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  core-tests:
+    name: Core / iOS logic tests
+    runs-on: macos-26
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Toolchain
+        run: xcodebuild -version && swiftc --version
+      - name: Idiom catalog is up to date
+        run: python3 scripts/generate_idioms.py --check
+      - name: Xcode project and prompts are up to date with generator
+        run: |
+          python3 ios/generate_project.py
+          git diff --exit-code -- ios || { echo "::error::run 'python3 ios/generate_project.py' and commit the result"; exit 1; }
+      - name: iOS logic tests (Foundation)
+        run: bash scripts/test_ios_core.sh
+
+  mac:
+    name: macOS app build + QA
+    runs-on: macos-26
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build Core and app
+        run: bash scripts/build.sh all
+      - name: Desktop QA (fake analyzer, in-memory vault)
+        run: build/easytalk.app/Contents/MacOS/easytalk --desktop-check build/desktop-check
+      - name: Upload QA screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mac-desktop-check
+          path: build/desktop-check
+          if-no-files-found: ignore
+
+  ios:
+    name: iOS build (${{ matrix.sdk }}, unsigned)
+    runs-on: macos-26
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - sdk: iphonesimulator
+            destination: generic/platform=iOS Simulator
+          - sdk: iphoneos
+            destination: generic/platform=iOS
+    steps:
+      - uses: actions/checkout@v4
+      - name: Toolchain
+        run: xcodebuild -version
+      - name: Build
+        run: |
+          set -o pipefail
+          xcodebuild build \
+            -project ios/EasyTalk.xcodeproj \
+            -scheme EasyTalk \
+            -configuration Debug \
+            -sdk ${{ matrix.sdk }} \
+            -destination '${{ matrix.destination }}' \
+            -derivedDataPath build/DerivedData \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" \
+            | tee build-${{ matrix.sdk }}.log | grep -E "error:|warning: .*deprecated|BUILD (SUCCEEDED|FAILED)" || true
+          grep -q "BUILD SUCCEEDED" build-${{ matrix.sdk }}.log
+      - name: Upload build log
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-build-log-${{ matrix.sdk }}
+          path: build-${{ matrix.sdk }}.log

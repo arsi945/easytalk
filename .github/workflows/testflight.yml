@@ -1,0 +1,126 @@
+# Сборка iOS с подписью и загрузка в TestFlight. Запуск вручную: Actions → TestFlight → Run workflow.
+# Подпись автоматическая (cloud-managed) через App Store Connect API key — p12 и профили вручную не нужны.
+# Нужные secrets и разовая подготовка описаны в docs/CI.md.
+name: TestFlight
+
+on:
+  workflow_dispatch:
+    inputs:
+      upload:
+        description: "Загрузить в TestFlight (иначе только подписанный архив)"
+        type: boolean
+        default: true
+
+concurrency:
+  group: testflight
+  cancel-in-progress: false
+
+jobs:
+  testflight:
+    runs-on: macos-26
+    timeout-minutes: 60
+    env:
+      TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+      ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+      ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+      BUNDLE_ID_PREFIX: ${{ vars.BUNDLE_ID_PREFIX }}
+      # Номер сборки должен расти с каждой загрузкой; 26 — последняя локальная сборка.
+      BUILD_NUMBER_OFFSET: 26
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check secrets
+        run: |
+          missing=0
+          for name in TEAM_ID ASC_KEY_ID ASC_ISSUER_ID; do
+            if [ -z "${!name}" ]; then echo "::error::secret for $name is not set (see docs/CI.md)"; missing=1; fi
+          done
+          if [ -z "${{ secrets.ASC_PRIVATE_KEY }}" ]; then echo "::error::secret ASC_PRIVATE_KEY is not set (see docs/CI.md)"; missing=1; fi
+          exit $missing
+
+      - name: Write App Store Connect key
+        env:
+          ASC_PRIVATE_KEY: ${{ secrets.ASC_PRIVATE_KEY }}
+        run: |
+          KEY_PATH="$RUNNER_TEMP/AuthKey_${ASC_KEY_ID}.p8"
+          printf '%s\n' "$ASC_PRIVATE_KEY" > "$KEY_PATH"
+          chmod 600 "$KEY_PATH"
+          echo "ASC_KEY_PATH=$KEY_PATH" >> "$GITHUB_ENV"
+
+      - name: Bundle ID prefix
+        if: env.BUNDLE_ID_PREFIX != '' && env.BUNDLE_ID_PREFIX != 'com.easytalk.personal'
+        run: |
+          # Только в копии раннера; репозиторий не меняется. Префикс общий для app, клавиатуры
+          # и App Group: "com.easytalk.personal…" и "group.com.easytalk.personal".
+          sed -i '' -E "s/([\".])com\.easytalk\.personal/\1${BUNDLE_ID_PREFIX}/g" ios/EasyTalk.xcodeproj/project.pbxproj
+          grep -nE "PRODUCT_BUNDLE_IDENTIFIER|APP_GROUP_IDENTIFIER" ios/EasyTalk.xcodeproj/project.pbxproj | sort -u -k2
+
+      - name: Build number
+        run: |
+          BUILD_NUMBER=$((BUILD_NUMBER_OFFSET + GITHUB_RUN_NUMBER))
+          echo "BUILD_NUMBER=$BUILD_NUMBER" >> "$GITHUB_ENV"
+          echo "Build number: $BUILD_NUMBER"
+
+      - name: Archive
+        run: |
+          set -o pipefail
+          xcodebuild archive \
+            -project ios/EasyTalk.xcodeproj \
+            -scheme EasyTalk \
+            -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -archivePath "$RUNNER_TEMP/EasyTalk.xcarchive" \
+            -derivedDataPath build/DerivedData \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath "$ASC_KEY_PATH" \
+            -authenticationKeyID "$ASC_KEY_ID" \
+            -authenticationKeyIssuerID "$ASC_ISSUER_ID" \
+            DEVELOPMENT_TEAM="$TEAM_ID" \
+            CODE_SIGN_STYLE=Automatic \
+            CURRENT_PROJECT_VERSION="$BUILD_NUMBER" \
+            | tee "$RUNNER_TEMP/archive.log" | grep -E "error:|ARCHIVE (SUCCEEDED|FAILED)" || true
+          grep -q "ARCHIVE SUCCEEDED" "$RUNNER_TEMP/archive.log"
+
+      - name: Export and upload
+        run: |
+          set -o pipefail
+          DESTINATION=export
+          if [ "${{ inputs.upload }}" = "true" ]; then DESTINATION=upload; fi
+          cat > "$RUNNER_TEMP/ExportOptions.plist" <<PLIST
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0"><dict>
+            <key>method</key><string>app-store-connect</string>
+            <key>destination</key><string>$DESTINATION</string>
+            <key>teamID</key><string>$TEAM_ID</string>
+            <key>signingStyle</key><string>automatic</string>
+            <key>manageAppVersionAndBuildNumber</key><false/>
+            <key>uploadSymbols</key><true/>
+          </dict></plist>
+          PLIST
+          xcodebuild -exportArchive \
+            -archivePath "$RUNNER_TEMP/EasyTalk.xcarchive" \
+            -exportPath "$RUNNER_TEMP/export" \
+            -exportOptionsPlist "$RUNNER_TEMP/ExportOptions.plist" \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath "$ASC_KEY_PATH" \
+            -authenticationKeyID "$ASC_KEY_ID" \
+            -authenticationKeyIssuerID "$ASC_ISSUER_ID" \
+            | tee "$RUNNER_TEMP/export.log" | grep -E "error:|EXPORT (SUCCEEDED|FAILED)|Upload|upload" || true
+          grep -q "EXPORT SUCCEEDED" "$RUNNER_TEMP/export.log"
+
+      - name: Upload logs and IPA
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: testflight-${{ env.BUILD_NUMBER }}
+          path: |
+            ${{ runner.temp }}/archive.log
+            ${{ runner.temp }}/export.log
+            ${{ runner.temp }}/export/*.ipa
+          if-no-files-found: ignore
+          retention-days: 14
+
+      - name: Remove key
+        if: always()
+        run: rm -f "$ASC_KEY_PATH"

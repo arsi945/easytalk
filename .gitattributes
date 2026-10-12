@@ -1,0 +1,6 @@
+# Исходники всегда с LF: скрипты запускаются на macOS-раннере, pbxproj читает Xcode.
+* text=auto eol=lf
+*.png binary
+*.a binary
+*.onnx binary
+Vendor/onnxruntime/onnxruntime.xcframework/** binary

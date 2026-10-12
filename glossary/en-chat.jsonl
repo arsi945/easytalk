@@ -1,0 +1,154 @@
+{"id": "g001", "k": "abbr", "s": ["I don't know"], "t": "idk", "ru": "не знаю", "r": "casual", "n": ""}
+{"id": "g002", "k": "abbr", "s": ["to be honest"], "t": "tbh", "ru": "честно говоря", "r": "casual", "n": ""}
+{"id": "g003", "k": "abbr", "s": ["not gonna lie"], "t": "ngl", "ru": "не буду врать", "r": "casual", "n": "часто перед мнением: «ngl, it was good»"}
+{"id": "g004", "k": "abbr", "s": ["in my opinion"], "t": "imo", "ru": "по-моему", "r": "casual", "n": "imho — «по моему скромному мнению», часто с иронией"}
+{"id": "g005", "k": "abbr", "s": ["by the way"], "t": "btw", "ru": "кстати", "r": "casual", "n": "в деловом письме писать полностью"}
+{"id": "g006", "k": "abbr", "s": ["be right back"], "t": "brb", "ru": "сейчас вернусь", "r": "casual", "n": ""}
+{"id": "g007", "k": "abbr", "s": ["oh my god"], "t": "omg", "ru": "боже мой", "r": "casual", "n": ""}
+{"id": "g008", "k": "abbr", "s": ["laughing out loud"], "t": "lol", "ru": "смешно / ха-ха", "r": "casual", "n": "сегодня почти «ха-ха», а не буквальный смех"}
+{"id": "g009", "k": "abbr", "s": ["as soon as possible"], "t": "asap", "ru": "как можно скорее", "r": "neutral", "n": "нормально и в рабочей почте"}
+{"id": "g010", "k": "abbr", "s": ["for your information"], "t": "fyi", "ru": "к сведению", "r": "neutral", "n": "в рабочем чате ок; может звучать резковато"}
+{"id": "g011", "k": "abbr", "s": ["talk to you later"], "t": "ttyl", "ru": "поговорим позже", "r": "casual", "n": ""}
+{"id": "g012", "k": "abbr", "s": ["never mind"], "t": "nvm", "ru": "забей / неважно", "r": "casual", "n": ""}
+{"id": "g013", "k": "abbr", "s": ["thanks"], "t": "thx", "ru": "спасибо", "r": "casual", "n": ""}
+{"id": "g014", "k": "abbr", "s": ["please"], "t": "pls", "ru": "пожалуйста", "r": "casual", "n": "в просьбах начальнику лучше полностью"}
+{"id": "g015", "k": "abbr", "s": ["thank you so much"], "t": "tysm", "ru": "огромное спасибо", "r": "casual", "n": ""}
+{"id": "g016", "k": "abbr", "s": ["no problem"], "t": "np", "ru": "не за что / без проблем", "r": "casual", "n": ""}
+{"id": "g017", "k": "abbr", "s": ["I don't care"], "t": "idc", "ru": "мне всё равно", "r": "casual", "n": "может звучать грубо"}
+{"id": "g018", "k": "abbr", "s": ["shaking my head"], "t": "smh", "ru": "качаю головой (осуждение)", "r": "casual", "n": ""}
+{"id": "g019", "k": "abbr", "s": ["for real"], "t": "fr", "ru": "серьёзно / реально", "r": "casual", "n": ""}
+{"id": "g020", "k": "abbr", "s": ["just kidding"], "t": "jk", "ru": "шучу", "r": "casual", "n": ""}
+{"id": "g021", "k": "abbr", "s": ["in real life"], "t": "irl", "ru": "в реальной жизни", "r": "casual", "n": ""}
+{"id": "g022", "k": "abbr", "s": ["as far as I know"], "t": "afaik", "ru": "насколько я знаю", "r": "casual", "n": ""}
+{"id": "g023", "k": "abbr", "s": ["too long; didn't read"], "t": "tl;dr", "ru": "слишком длинно — вот суть", "r": "casual", "n": "пишут перед кратким итогом"}
+{"id": "g024", "k": "abbr", "s": ["direct message"], "t": "DM", "ru": "личное сообщение", "r": "casual", "n": "глагол: «DM me» — напиши мне в личку"}
+{"id": "g025", "k": "abbr", "s": ["what the hell"], "t": "wth", "ru": "что за ерунда", "r": "casual", "n": "резко"}
+{"id": "g026", "k": "abbr", "s": ["good game"], "t": "gg", "ru": "хорошая игра", "r": "casual", "n": "в играх; ироничное «всё кончено»"}
+{"id": "g027", "k": "abbr", "s": ["away from keyboard"], "t": "afk", "ru": "отошёл от компьютера", "r": "casual", "n": ""}
+{"id": "g028", "k": "abbr", "s": ["right now"], "t": "rn", "ru": "прямо сейчас", "r": "casual", "n": "«I'm busy rn»"}
+{"id": "g029", "k": "abbr", "s": ["at the moment"], "t": "atm", "ru": "в данный момент", "r": "casual", "n": "не путать с банкоматом"}
+{"id": "g030", "k": "abbr", "s": ["I love you"], "t": "ily", "ru": "люблю тебя", "r": "casual", "n": "только близким"}
+{"id": "g031", "k": "abbr", "s": ["see you"], "t": "cya", "ru": "увидимся", "r": "casual", "n": "«see ya» — стандартная разговорная форма"}
+{"id": "g032", "k": "abbr", "s": ["what's up"], "t": "sup", "ru": "как дела / чего нового", "r": "casual", "n": ""}
+{"id": "g033", "k": "abbr", "s": ["because"], "t": "cuz", "ru": "потому что", "r": "casual", "n": "также bc; в формальном — только because"}
+{"id": "g034", "k": "abbr", "s": ["rolling on the floor laughing"], "t": "rofl", "ru": "катаюсь от смеха", "r": "casual", "n": "уже старомодно"}
+{"id": "g035", "k": "abbr", "s": ["fear of missing out"], "t": "fomo", "ru": "страх упустить", "r": "casual", "n": "существительное: «I have fomo»"}
+{"id": "g036", "k": "abbr", "s": ["be back later"], "t": "bbl", "ru": "вернусь позже", "r": "casual", "n": ""}
+{"id": "g037", "k": "abbr", "s": ["let me know"], "t": "lmk", "ru": "дай знать", "r": "casual", "n": ""}
+{"id": "g038", "k": "abbr", "s": ["in case you missed it"], "t": "icymi", "ru": "если вы пропустили", "r": "neutral", "n": ""}
+{"id": "g039", "k": "abbr", "s": ["out of office"], "t": "OOO", "ru": "нет на месте (отпуск)", "r": "neutral", "n": "в рабочих сообщениях"}
+{"id": "g040", "k": "abbr", "s": ["end of day"], "t": "EOD", "ru": "до конца рабочего дня", "r": "neutral", "n": "«send it by EOD»"}
+{"id": "g041", "k": "abbr", "s": ["to be determined"], "t": "TBD", "ru": "ещё не определено", "r": "neutral", "n": ""}
+{"id": "g042", "k": "abbr", "s": ["work in progress"], "t": "WIP", "ru": "в процессе", "r": "neutral", "n": ""}
+{"id": "g043", "k": "abbr", "s": ["I know right"], "t": "ikr", "ru": "и не говори", "r": "casual", "n": "согласие с эмоцией"}
+{"id": "g044", "k": "abbr", "s": ["oh well"], "t": "ow", "ru": "ну что ж", "r": "casual", "n": "редкое; лучше писать полностью"}
+{"id": "g045", "k": "spell", "s": ["going to"], "t": "gonna", "ru": "собираюсь", "r": "casual", "n": "только перед глаголом: «I'm gonna go». «I'm gonna the store» — нельзя"}
+{"id": "g046", "k": "spell", "s": ["want to"], "t": "wanna", "ru": "хочу", "r": "casual", "n": "«wanna» = want to + глагол"}
+{"id": "g047", "k": "spell", "s": ["got to"], "t": "gotta", "ru": "нужно", "r": "casual", "n": "= have got to"}
+{"id": "g048", "k": "spell", "s": ["kind of"], "t": "kinda", "ru": "вроде / немного", "r": "casual", "n": ""}
+{"id": "g049", "k": "spell", "s": ["sort of"], "t": "sorta", "ru": "вроде", "r": "casual", "n": ""}
+{"id": "g050", "k": "spell", "s": ["don't know"], "t": "dunno", "ru": "не знаю", "r": "casual", "n": ""}
+{"id": "g051", "k": "spell", "s": ["let me"], "t": "lemme", "ru": "дай я", "r": "casual", "n": ""}
+{"id": "g052", "k": "spell", "s": ["give me"], "t": "gimme", "ru": "дай мне", "r": "casual", "n": ""}
+{"id": "g053", "k": "spell", "s": ["out of"], "t": "outta", "ru": "из", "r": "casual", "n": ""}
+{"id": "g054", "k": "spell", "s": ["you all"], "t": "y'all", "ru": "вы все", "r": "casual", "n": "американский юг, но понятно везде"}
+{"id": "g055", "k": "spell", "s": ["probably"], "t": "prolly", "ru": "наверное", "r": "casual", "n": ""}
+{"id": "g056", "k": "spell", "s": ["though"], "t": "tho", "ru": "хотя", "r": "casual", "n": ""}
+{"id": "g057", "k": "spell", "s": ["through"], "t": "thru", "ru": "через", "r": "casual", "n": ""}
+{"id": "g058", "k": "spell", "s": ["about"], "t": "'bout", "ru": "о / около", "r": "casual", "n": "чаще в речи"}
+{"id": "g059", "k": "spell", "s": ["trying to"], "t": "tryna", "ru": "пытаюсь", "r": "casual", "n": ""}
+{"id": "g060", "k": "spell", "s": ["I am going to"], "t": "ima", "ru": "я собираюсь", "r": "casual", "n": "слитно: «ima go» — редко, понимать"}
+{"id": "g061", "k": "spell", "s": ["you"], "t": "u", "ru": "ты/вы", "r": "casual", "n": "в чате; в письме — you"}
+{"id": "g062", "k": "spell", "s": ["your / you're"], "t": "ur", "ru": "твой / ты есть", "r": "casual", "n": "пугает путаницей — лучше писать полностью"}
+{"id": "g063", "k": "spell", "s": ["are"], "t": "r", "ru": "есть (вы)", "r": "casual", "n": "редко"}
+{"id": "g064", "k": "spell", "s": ["to / too"], "t": "2", "ru": "к / тоже", "r": "casual", "n": "устарело, но встречается: «see u 2»"}
+{"id": "g065", "k": "spell", "s": ["for"], "t": "4", "ru": "для", "r": "casual", "n": "устарело: «4 u»"}
+{"id": "g066", "k": "spell", "s": ["great"], "t": "gr8", "ru": "отлично", "r": "casual", "n": "устарело"}
+{"id": "g067", "k": "spell", "s": ["later"], "t": "l8r", "ru": "позже", "r": "casual", "n": "устарело"}
+{"id": "g068", "k": "spell", "s": ["okay"], "t": "k", "ru": "ладно", "r": "casual", "n": "сухо; «kk» мягче; на «k» могут обидеться"}
+{"id": "g069", "k": "spell", "s": ["yes"], "t": "yep", "ru": "да", "r": "casual", "n": "также yeah"}
+{"id": "g070", "k": "spell", "s": ["no"], "t": "nope", "ru": "нет", "r": "casual", "n": "также nah"}
+{"id": "g071", "k": "spell", "s": ["because"], "t": "'cause", "ru": "потому что", "r": "casual", "n": ""}
+{"id": "g072", "k": "slang", "s": ["kind of / a bit"], "t": "lowkey", "ru": "слегка, втайне", "r": "casual", "n": "«I lowkey like it». Противоположное — highkey (сильно)"}
+{"id": "g073", "k": "slang", "s": ["really / very much"], "t": "highkey", "ru": "очень", "r": "casual", "n": ""}
+{"id": "g074", "k": "slang", "s": ["mood"], "t": "mood", "ru": "«так же» / близкое состояние", "r": "casual", "n": "«Monday morning — mood»"}
+{"id": "g075", "k": "slang", "s": ["atmosphere"], "t": "vibe", "ru": "атмосфера", "r": "casual", "n": "«good vibes», «vibe check»"}
+{"id": "g076", "k": "slang", "s": ["suspicious"], "t": "sus", "ru": "подозрительный", "r": "casual", "n": "из игр"}
+{"id": "g077", "k": "slang", "s": ["no lie"], "t": "no cap", "ru": "без вранья", "r": "casual", "n": "cap — враньё: «that's cap» — это ложь"}
+{"id": "g078", "k": "slang", "s": ["okay / agreed"], "t": "bet", "ru": "ладно, договорились", "r": "casual", "n": ""}
+{"id": "g079", "k": "slang", "s": ["gossip"], "t": "tea", "ru": "сплетни", "r": "casual", "n": "«spill the tea» — рассказать новости"}
+{"id": "g080", "k": "slang", "s": ["friend"], "t": "bro / fam", "ru": "чувак / свои", "r": "casual", "n": "«bro» без оттенка пола; «fam» — близкие друзья"}
+{"id": "g081", "k": "slang", "s": ["embarrassing"], "t": "cringe", "ru": "стыдно, неловко", "r": "casual", "n": ""}
+{"id": "g082", "k": "slang", "s": ["ignoring someone"], "t": "ghosting", "ru": "пропал без объяснений", "r": "casual", "n": "глагол: «he ghosted me»"}
+{"id": "g083", "k": "slang", "s": ["showing off"], "t": "flex", "ru": "хвастаться", "r": "casual", "n": "«weird flex but okay»"}
+{"id": "g084", "k": "slang", "s": ["really"], "t": "literally", "ru": "буквально / прямо", "r": "casual", "n": "часто как усилитель, не в буквальном смысле"}
+{"id": "g085", "k": "slang", "s": ["honestly / legitimately"], "t": "legit", "ru": "настоящий; честно", "r": "casual", "n": ""}
+{"id": "g086", "k": "slang", "s": ["upset / bitter"], "t": "salty", "ru": "обиженный", "r": "casual", "n": ""}
+{"id": "g087", "k": "slang", "s": ["charisma"], "t": "rizz", "ru": "обаяние", "r": "casual", "n": "молодёжный, быстро стареет"}
+{"id": "g088", "k": "slang", "s": ["fan"], "t": "stan", "ru": "фанат", "r": "casual", "n": "также глагол"}
+{"id": "g089", "k": "slang", "s": ["cool"], "t": "dope", "ru": "круто", "r": "casual", "n": "старее; ок в США"}
+{"id": "g090", "k": "idiom", "s": ["good luck"], "t": "break a leg", "ru": "ни пуха ни пера", "r": "neutral", "n": "говорят перед выступлением"}
+{"id": "g091", "k": "idiom", "s": ["very easy"], "t": "a piece of cake", "ru": "проще простого", "r": "neutral", "n": ""}
+{"id": "g092", "k": "idiom", "s": ["I feel sick / unwell"], "t": "under the weather", "ru": "нездоровится", "r": "neutral", "n": "мягкое «болею»"}
+{"id": "g093", "k": "idiom", "s": ["go to bed"], "t": "hit the sack", "ru": "завалиться спать", "r": "neutral", "n": ""}
+{"id": "g094", "k": "idiom", "s": ["reveal a secret"], "t": "spill the beans", "ru": "проболтаться", "r": "neutral", "n": ""}
+{"id": "g095", "k": "idiom", "s": ["very rarely"], "t": "once in a blue moon", "ru": "раз в сто лет", "r": "neutral", "n": ""}
+{"id": "g096", "k": "idiom", "s": ["very expensive"], "t": "cost an arm and a leg", "ru": "стоить целое состояние", "r": "neutral", "n": ""}
+{"id": "g097", "k": "idiom", "s": ["stop working for today"], "t": "call it a day", "ru": "заканчивать на сегодня", "r": "neutral", "n": ""}
+{"id": "g098", "k": "idiom", "s": ["the next move is yours"], "t": "the ball is in your court", "ru": "теперь ход за вами", "r": "neutral", "n": ""}
+{"id": "g099", "k": "idiom", "s": ["do something unpleasant that is necessary"], "t": "bite the bullet", "ru": "стиснуть зубы и сделать", "r": "neutral", "n": ""}
+{"id": "g100", "k": "idiom", "s": ["not say the point directly"], "t": "beat around the bush", "ru": "ходить вокруг да около", "r": "neutral", "n": ""}
+{"id": "g101", "k": "idiom", "s": ["start a conversation"], "t": "break the ice", "ru": "растопить лёд", "r": "neutral", "n": ""}
+{"id": "g102", "k": "idiom", "s": ["make extra effort"], "t": "go the extra mile", "ru": "сделать больше нужного", "r": "neutral", "n": ""}
+{"id": "g103", "k": "idiom", "s": ["agree with each other"], "t": "be on the same page", "ru": "понимать друг друга", "r": "neutral", "n": ""}
+{"id": "g104", "k": "idiom", "s": ["raining hard"], "t": "it's raining cats and dogs", "ru": "льёт как из ведра", "r": "neutral", "n": ""}
+{"id": "g105", "k": "idiom", "s": ["reveal a secret by mistake"], "t": "let the cat out of the bag", "ru": "сболтнуть секрет", "r": "neutral", "n": ""}
+{"id": "g106", "k": "idiom", "s": ["solve two problems at once"], "t": "kill two birds with one stone", "ru": "убить двух зайцев", "r": "neutral", "n": ""}
+{"id": "g107", "k": "idiom", "s": ["bad thing with good result"], "t": "a blessing in disguise", "ru": "нет худа без добра", "r": "neutral", "n": ""}
+{"id": "g108", "k": "idiom", "s": ["we were just talking about him"], "t": "speak of the devil", "ru": "лёгок на помине", "r": "neutral", "n": ""}
+{"id": "g109", "k": "idiom", "s": ["I totally agree"], "t": "you can say that again", "ru": "не поспоришь", "r": "neutral", "n": ""}
+{"id": "g110", "k": "idiom", "s": ["don't stress"], "t": "take it easy", "ru": "не напрягайся / расслабься", "r": "neutral", "n": "также прощание: «take it easy»"}
+{"id": "g111", "k": "idiom", "s": ["stay strong"], "t": "hang in there", "ru": "держись", "r": "neutral", "n": ""}
+{"id": "g112", "k": "idiom", "s": ["stay in contact"], "t": "keep in touch", "ru": "не пропадай", "r": "neutral", "n": ""}
+{"id": "g113", "k": "idiom", "s": ["I'm listening"], "t": "I'm all ears", "ru": "слушаю внимательно", "r": "neutral", "n": ""}
+{"id": "g114", "k": "idiom", "s": ["it doesn't matter"], "t": "no big deal", "ru": "ерунда", "r": "neutral", "n": ""}
+{"id": "g115", "k": "idiom", "s": ["in short"], "t": "long story short", "ru": "короче говоря", "r": "neutral", "n": "вводное слово"}
+{"id": "g116", "k": "idiom", "s": ["decide"], "t": "make up your mind", "ru": "определись", "r": "neutral", "n": "не «do up mind»"}
+{"id": "g117", "k": "idiom", "s": ["understand / solve"], "t": "figure out", "ru": "разобраться", "r": "neutral", "n": ""}
+{"id": "g118", "k": "idiom", "s": ["wait with excitement"], "t": "can't wait", "ru": "не могу дождаться", "r": "neutral", "n": "нейтральнее look forward to"}
+{"id": "g119", "k": "idiom", "s": ["be friends with"], "t": "get along with", "ru": "ладить с", "r": "neutral", "n": ""}
+{"id": "g120", "k": "idiom", "s": ["sleep late / be tired"], "t": "burn the midnight oil", "ru": "работать допоздна", "r": "neutral", "n": ""}
+{"id": "g121", "k": "idiom", "s": ["it's your decision"], "t": "it's up to you", "ru": "решать тебе", "r": "neutral", "n": ""}
+{"id": "g122", "k": "idiom", "s": ["by chance"], "t": "by any chance", "ru": "случайно", "r": "neutral", "n": "в вопросах-просьбах"}
+{"id": "g123", "k": "idiom", "s": ["not in the mood"], "t": "not feeling it", "ru": "не хочется", "r": "neutral", "n": ""}
+{"id": "g124", "k": "idiom", "s": ["have a different opinion"], "t": "see it differently", "ru": "смотреть иначе", "r": "neutral", "n": ""}
+{"id": "g125", "k": "calque", "s": ["с нетерпением жду"], "t": "can't wait / looking forward to", "ru": "русский разговорный оборот", "r": "casual", "n": "look forward to + -ing: «looking forward to seeing you»"}
+{"id": "g126", "k": "calque", "s": ["как дела"], "t": "how's it going / how are you", "ru": "русский разговорный оборот", "r": "casual", "n": ""}
+{"id": "g127", "k": "calque", "s": ["кстати"], "t": "by the way", "ru": "русский разговорный оборот", "r": "casual", "n": ""}
+{"id": "g128", "k": "calque", "s": ["в общем"], "t": "anyway / in short", "ru": "русский разговорный оборот", "r": "casual", "n": "anyway — вернуться к теме"}
+{"id": "g129", "k": "calque", "s": ["короче"], "t": "anyway / long story short", "ru": "русский разговорный оборот", "r": "casual", "n": ""}
+{"id": "g130", "k": "calque", "s": ["типа"], "t": "like / kind of", "ru": "русский разговорный оборот", "r": "casual", "n": "«like» как вводное — разговорное, не злоупотреблять"}
+{"id": "g131", "k": "calque", "s": ["блин"], "t": "damn / ugh / oh man", "ru": "русский разговорный оборот", "r": "casual", "n": "по силе слабее мата"}
+{"id": "g132", "k": "calque", "s": ["прикольно"], "t": "that's cool", "ru": "русский разговорный оборот", "r": "casual", "n": ""}
+{"id": "g133", "k": "calque", "s": ["хз"], "t": "idk", "ru": "русский разговорный оборот", "r": "casual", "n": ""}
+{"id": "g134", "k": "calque", "s": ["ладно"], "t": "okay / fine / alright", "ru": "русский разговорный оборот", "r": "casual", "n": ""}
+{"id": "g135", "k": "calque", "s": ["норм"], "t": "fine / good / not bad", "ru": "русский разговорный оборот", "r": "casual", "n": ""}
+{"id": "g136", "k": "calque", "s": ["не парься"], "t": "don't worry about it", "ru": "русский разговорный оборот", "r": "casual", "n": ""}
+{"id": "g137", "k": "calque", "s": ["без проблем"], "t": "no problem", "ru": "русский разговорный оборот", "r": "casual", "n": ""}
+{"id": "g138", "k": "calque", "s": ["я в шоке"], "t": "I'm shocked", "ru": "русский разговорный оборот", "r": "casual", "n": ""}
+{"id": "g139", "k": "calque", "s": ["пофиг"], "t": "whatever / I don't care", "ru": "русский разговорный оборот", "r": "casual", "n": "грубо"}
+{"id": "g140", "k": "calque", "s": ["ничего себе"], "t": "wow / no way", "ru": "русский разговорный оборот", "r": "casual", "n": ""}
+{"id": "g141", "k": "calque", "s": ["зачёт"], "t": "nice one", "ru": "русский разговорный оборот", "r": "casual", "n": ""}
+{"id": "g142", "k": "calque", "s": ["давай"], "t": "let's", "ru": "русский разговорный оборот", "r": "casual", "n": "«давай встретимся» — «let's meet»"}
+{"id": "g143", "k": "calque", "s": ["пока"], "t": "bye / see you", "ru": "русский разговорный оборот", "r": "casual", "n": ""}
+{"id": "g144", "k": "calque", "s": ["потом"], "t": "later / then", "ru": "русский разговорный оборот", "r": "casual", "n": "later — потом по времени"}
+{"id": "g145", "k": "calque", "s": ["сейчас"], "t": "now / right now / in a minute", "ru": "русский разговорный оборот", "r": "casual", "n": "in a minute — «сейчас сделаю»"}
+{"id": "g146", "k": "calque", "s": ["я не против"], "t": "I don't mind", "ru": "русский разговорный оборот", "r": "casual", "n": "не «I'm not against»"}
+{"id": "g147", "k": "calque", "s": ["мне нравится"], "t": "I like it", "ru": "русский разговорный оборот", "r": "casual", "n": ""}
+{"id": "g148", "k": "calque", "s": ["можно"], "t": "can I / may I", "ru": "русский разговорный оборот", "r": "casual", "n": "«можно войти?» — «may I come in?»"}
+{"id": "g149", "k": "calque", "s": ["получается"], "t": "it turns out / I can do it", "ru": "русский разговорный оборот", "r": "casual", "n": "зависит от контекста"}
+{"id": "g150", "k": "calque", "s": ["на самом деле"], "t": "actually / to be honest", "ru": "русский разговорный оборот", "r": "casual", "n": "actually — не «в настоящее время»"}
+{"id": "g151", "k": "calque", "s": ["в принципе"], "t": "basically / in principle", "ru": "русский разговорный оборот", "r": "casual", "n": ""}
+{"id": "g152", "k": "calque", "s": ["наверное"], "t": "probably / maybe", "ru": "русский разговорный оборот", "r": "casual", "n": ""}
+{"id": "g153", "k": "calque", "s": ["скорее всего"], "t": "most likely", "ru": "русский разговорный оборот", "r": "casual", "n": ""}
+{"id": "g154", "k": "calque", "s": ["сам не знаю"], "t": "I really don't know", "ru": "русский разговорный оборот", "r": "casual", "n": ""}

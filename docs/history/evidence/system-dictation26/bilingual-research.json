@@ -1,0 +1,33 @@
+{
+  "date": "2026-10-08",
+  "outcome": "No verified public native EN/RU mixed-dictation control found; current user scenario unresolved",
+  "sources": [
+    {
+      "url": "https://support.apple.com/guide/iphone/dictate-text-iph2c0651d2/ios",
+      "finding": "Apple describes dictation in the language of the keyboard and stopping with the dictation button. Does not document English/Russian code switching in a custom keyboard."
+    },
+    {
+      "url": "https://support.apple.com/en-sa/guide/iphone/iph73b71eb/27/ios/27",
+      "finding": "Bilingual keyboard guidance concerns typing for selected language pairs; not evidence of mixed EN/RU speech recognition."
+    },
+    {
+      "url": "https://www.apple.com/ios/feature-availability/",
+      "finding": "English and Russian listed for Dictation and On-Device/Modeless Dictation separately. Multilingual Typing is a distinct QuickType section; no EN/RU mixed-dictation guarantee found."
+    },
+    {
+      "url": "https://developer.apple.com/documentation/uikit/uiinputviewcontroller/primarylanguage",
+      "finding": "One BCP47 identifier overrides plist PrimaryLanguage. Our EN/RU sets en-US or ru-RU; not multiple ASR language configuration."
+    }
+  ],
+  "codeReview": {
+    "file": "ios/Keyboard/KeyboardViewController.swift",
+    "languageHint": "primaryLanguage set on appearance and rebuild from EN/RU; default EN",
+    "nativeLanguageSwitchOnDevice": "not separately verified"
+  },
+  "inference": "The supported public custom-keyboard configuration does not establish mixed EN/RU native recognition or control over native inline stop UI. Absence of documentation is not a universal claim about all ASR engines.",
+  "codeChanged": false,
+  "newBuild": false,
+  "apiDebugRequests": 0,
+  "keysRead": false,
+  "privateAPIAdded": false
+}

@@ -1,0 +1,31 @@
+{
+  "date": "2026-10-08",
+  "sources": [
+    {
+      "title": "Apple: Configuring a custom keyboard interface",
+      "url": "https://developer.apple.com/documentation/uikit/configuring-a-custom-keyboard-interface",
+      "finding": "iOS may provide a system dictation button with custom keyboards. hasDictationKey=true suppresses/disables it; leave false to permit it."
+    },
+    {
+      "title": "Apple: hasDictationKey",
+      "url": "https://developer.apple.com/documentation/uikit/uiinputviewcontroller/hasdictationkey",
+      "finding": "The property indicates an own dictation key; it is not an API to start system dictation from an arbitrary custom control."
+    },
+    {
+      "title": "Apple: open access for custom keyboards",
+      "url": "https://developer.apple.com/documentation/uikit/configuring-open-access-for-a-custom-keyboard",
+      "finding": "Full Access does not grant direct microphone capture to the custom extension."
+    },
+    {
+      "title": "Wispr Flow iPhone setup",
+      "url": "https://docs.wisprflow.ai/articles/7453988911-set-up-the-flow-keyboard-on-iphone",
+      "finding": "Provider documents containing-app opening/automatic return and a confirmation on first return. Not an example of cold zero-transition custom recording."
+    }
+  ],
+  "localSDK": "Xcode16.2 / UIKit18.2 UIInputViewController.h inspected",
+  "newPrivateAPIUsed": false,
+  "paidSDKPurchased": false,
+  "aiDebugRequests": 0,
+  "personalKeysRead": false,
+  "liveNativeDictationResult": "user confirmed live speech recognition; mixed EN/RU unresolved"
+}
