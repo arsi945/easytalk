@@ -61,6 +61,59 @@ jobs:
           echo "BUILD_NUMBER=$BUILD_NUMBER" >> "$GITHUB_ENV"
           echo "Build number: $BUILD_NUMBER"
 
+      # Automatic signing needs an "Apple Development" identity to archive. Left alone, Xcode creates a
+      # new certificate on every fresh runner and the account runs out of them. Instead, one certificate
+      # is created through the App Store Connect API (scripts/ci/create_signing_identity.py) and its
+      # PKCS#12 file is kept in the Actions cache (private repo), encrypted with a password derived
+      # from the ASC key. Nothing is exported from the keychain, so no UI prompt can block the job.
+      # After revoking that certificate, bump "-v1" in the cache keys.
+      - name: Signing keychain
+        env:
+          ASC_PRIVATE_KEY: ${{ secrets.ASC_PRIVATE_KEY }}
+        run: |
+          PASS=$(printf '%s' "$ASC_PRIVATE_KEY" | shasum -a 256 | cut -c1-40)
+          echo "::add-mask::$PASS"
+          echo "IDENTITY_PASS=$PASS" >> "$GITHUB_ENV"
+          KEYCHAIN="$RUNNER_TEMP/signing.keychain-db"
+          security create-keychain -p "$PASS" "$KEYCHAIN"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN"
+          security unlock-keychain -p "$PASS" "$KEYCHAIN"
+          security list-keychains -d user -s "$KEYCHAIN" $(security list-keychains -d user | tr -d '"')
+          security default-keychain -s "$KEYCHAIN"
+          echo "SIGNING_KEYCHAIN=$KEYCHAIN" >> "$GITHUB_ENV"
+
+      - name: Restore development identity
+        id: identity
+        uses: actions/cache/restore@v4
+        with:
+          path: ${{ runner.temp }}/identity/development.p12
+          key: apple-development-identity-v1-${{ github.run_id }}
+          restore-keys: apple-development-identity-v1-
+
+      - name: Create development identity
+        id: create-identity
+        # No identity came back from the cache (cache-hit stays false for a prefix match, so use the matched key).
+        if: steps.identity.outputs.cache-matched-key == ''
+        run: |
+          python3 -m venv "$RUNNER_TEMP/venv"
+          "$RUNNER_TEMP/venv/bin/pip" install --quiet pyjwt cryptography
+          "$RUNNER_TEMP/venv/bin/python" scripts/ci/create_signing_identity.py "$RUNNER_TEMP/identity/development.p12"
+          echo "created=true" >> "$GITHUB_OUTPUT"
+
+      - name: Import development identity
+        run: |
+          security import "$RUNNER_TEMP/identity/development.p12" -k "$SIGNING_KEYCHAIN" -P "$IDENTITY_PASS" \
+            -T /usr/bin/codesign -T /usr/bin/security -T /usr/bin/productbuild
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$IDENTITY_PASS" "$SIGNING_KEYCHAIN" > /dev/null
+          security find-identity -v -p codesigning "$SIGNING_KEYCHAIN" | sed -E 's/[0-9A-F]{40}/<hash>/'
+
+      - name: Cache development identity
+        if: steps.create-identity.outputs.created == 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: ${{ runner.temp }}/identity/development.p12
+          key: apple-development-identity-v1-${{ github.run_id }}
+
       - name: Archive
         run: |
           set -o pipefail
@@ -121,6 +174,8 @@ jobs:
           if-no-files-found: ignore
           retention-days: 14
 
-      - name: Remove key
+      - name: Remove key and keychain
         if: always()
-        run: rm -f "$ASC_KEY_PATH"
+        run: |
+          rm -f "$ASC_KEY_PATH" "$RUNNER_TEMP/identity/development.p12"
+          if [ -n "$SIGNING_KEYCHAIN" ]; then security delete-keychain "$SIGNING_KEYCHAIN" || true; fi
