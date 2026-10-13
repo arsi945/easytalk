@@ -217,7 +217,7 @@ final class DesktopModel: ObservableObject {
         let base = baseURL.trimmingCharacters(in: .whitespacesAndNewlines)
         let config = ConnectionSettings(provider: provider, apiKey: secret, model: model.trimmingCharacters(in: .whitespacesAndNewlines),
                                         baseURL: base.isEmpty ? nil : base, speakerGender: gender)
-        guard config.url != nil else { notice = "Укажи ключ \(provider.title) и модель" + (provider.editableBaseURL ? " и адрес …aliyuncs.com." : "."); return false }
+        guard config.url != nil else { notice = "Укажи ключ \(provider.title) и модель" + (provider.editableBaseURL ? " и адрес вида \(provider.addressHint)." : "."); return false }
         guard vault.write(config) else { notice = "Не удалось сохранить ключ в Keychain. Поле не очищено."; return false }
         invalidateRequest(); connection = config; notice = "Подключение сохранено в Keychain."; changed(); return true
     }

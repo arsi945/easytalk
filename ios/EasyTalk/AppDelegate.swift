@@ -295,7 +295,7 @@ final class SetupViewController: UIViewController, UITextFieldDelegate {
     @objc private func changeProvider() {
         let provider = self.provider
         endpoint.isHidden = !provider.editableBaseURL; endpoint.text = provider.defaultBaseURL
-        endpoint.placeholder = "https://…aliyuncs.com/compatible-mode/v1"
+        endpoint.placeholder = provider.addressHint
         model.text = provider.defaultModel; model.placeholder = "Модель \(provider.title)"
         token.placeholder = provider.keyPlaceholder; token.text = ""
         providerHelp.text = provider.keyHelp + " Модель можно заменить на любую доступную вашему ключу."
@@ -373,7 +373,7 @@ final class SetupViewController: UIViewController, UITextFieldDelegate {
         view.endEditing(true)
         let config = formConfig
         guard config.url != nil else {
-            message.text = provider.editableBaseURL ? "Введи ключ, модель и HTTPS-адрес Model Studio (…aliyuncs.com)." : "Введи ключ \(provider.title) и название модели."; return
+            message.text = provider.editableBaseURL ? "Введи ключ, модель и HTTPS-адрес вида \(provider.addressHint)." : "Введи ключ \(provider.title) и название модели."; return
         }
         checkOperation?.cancel(); message.text = "Проверяю на тестовой фразе «I want to купить coffee.»…"
         let started = Date()
@@ -395,7 +395,7 @@ final class SetupViewController: UIViewController, UITextFieldDelegate {
     @objc private func saveSettings() {
         let config = formConfig
         guard config.url != nil else {
-            message.text = provider.editableBaseURL ? "Введи ключ, модель и HTTPS-адрес Model Studio (…aliyuncs.com)." : "Введи ключ \(provider.title) и название модели."; return
+            message.text = provider.editableBaseURL ? "Введи ключ, модель и HTTPS-адрес вида \(provider.addressHint)." : "Введи ключ \(provider.title) и название модели."; return
         }
         guard ConnectionStore.write(config) else {
             message.text = "Не удалось сохранить подключение. Ключ остался в поле."; return
