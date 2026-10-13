@@ -624,6 +624,32 @@ enum LearningTests {
         if case .success = AnalysisService.decode(fencedEnvelope, response: http, error: nil, source: source, provider: .bedrock) {
             check(true, "JSON inside a code fence is accepted without a schema")
         } else { check(false, "JSON inside a code fence is accepted without a schema") }
+        // Claude AWS (Claude Platform on AWS): first-party Messages API on aws-external-anthropic with a workspace.
+        let claudeAWS = ConnectionSettings(provider: .claudeAWS, apiKey: "aws-console-key", baseURL: "https://aws-external-anthropic.us-west-2.api.aws/v1",
+                                           workspaceID: " wrkspc_01Test ")
+        let awsRequest = AnalysisService.makeRequest(source: source, config: claudeAWS)!
+        let awsBody = try! JSONSerialization.jsonObject(with: awsRequest.httpBody!) as! [String: Any]
+        check(awsRequest.url?.absoluteString == "https://aws-external-anthropic.us-west-2.api.aws/v1/messages"
+              && awsRequest.value(forHTTPHeaderField: "x-api-key") == "aws-console-key" && awsRequest.value(forHTTPHeaderField: "anthropic-workspace-id") == "wrkspc_01Test",
+              "Claude AWS sends the key and the workspace to the regional endpoint")
+        check(((awsBody["output_config"] as! [String: Any])["format"] as? [String: Any])?["type"] as? String == "json_schema" && awsBody["fallbacks"] as? String == "default",
+              "Claude AWS keeps the schema and the server-side fallback")
+        check(ConnectionSettings(provider: .claudeAWS, apiKey: "k").url == nil, "Claude AWS without a workspace is not a connection")
+        check(ConnectionSettings(provider: .claudeAWS, apiKey: "k", baseURL: "https://evil.example/v1", workspaceID: "wrkspc_1").url == nil, "Claude AWS key goes only to aws-external-anthropic hosts")
+        let awsModels = ModelCatalog.request(config: claudeAWS)!
+        check(awsModels.url?.absoluteString == "https://aws-external-anthropic.us-west-2.api.aws/v1/models?limit=100" && awsModels.value(forHTTPHeaderField: "anthropic-workspace-id") == "wrkspc_01Test",
+              "Claude AWS model list sends the workspace")
+        let awsRoundTrip = try? JSONDecoder().decode(ConnectionSettings.self, from: JSONEncoder().encode(claudeAWS))
+        check(awsRoundTrip?.provider == .claudeAWS && awsRoundTrip?.workspaceID == "wrkspc_01Test", "Claude AWS settings persist with the workspace")
+        // A short-term AWS key: base64 of a presigned request; the app shows when it stops working.
+        let presigned = "aws-external-anthropic.amazonaws.com/?Action=CallWithBearerToken&X-Amz-Date=20261012T210153Z&X-Amz-Expires=43200&Version=1"
+        let shortKey = "aws-external-anthropic-api-key-" + Data(presigned.utf8).base64EncodedString().replacingOccurrences(of: "=", with: "")
+        let expiry = ConnectionSettings.temporaryKeyExpiry(shortKey)
+        check(expiry == Date(timeIntervalSince1970: 1_791_838_913 + 43_200), "short-term key expiry read from X-Amz-Date + X-Amz-Expires")
+        check(AIProvider.claudeAWS.keyWarning(shortKey, now: expiry!.addingTimeInterval(-60))?.contains("Временный ключ: действует до") == true
+              && AIProvider.claudeAWS.keyWarning(shortKey, now: expiry!.addingTimeInterval(60))?.contains("истёк") == true, "short-term key: valid until, then expired")
+        check(ConnectionSettings.temporaryKeyExpiry("sk-ant-api03-0123456789") == nil && AIProvider.claudeAWS.keyWarning("sk-ant-api03-0123456789") != nil,
+              "a Claude Console key is flagged for Claude AWS")
         // Study actions go through the same provider formats.
         let claudeStudy = StudyActionService.makeRequest(.rephrase, source: "I want to buy coffee.", config: claudeConfig)!
         let claudeStudyBody = try! JSONSerialization.jsonObject(with: claudeStudy.httpBody!) as! [String: Any]

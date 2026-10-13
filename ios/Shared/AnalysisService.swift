@@ -65,18 +65,20 @@ public enum AIRequest {
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         var body: [String: Any]
         switch config.provider {
-        case .anthropic, .bedrock:
-            // Bedrock API keys go in the same x-api-key header on the bedrock-mantle Messages endpoint.
+        case .anthropic, .claudeAWS, .bedrock:
+            // AWS Console keys (Claude AWS) and Bedrock API keys go in the same x-api-key header.
             request.setValue(config.token, forHTTPHeaderField: "x-api-key")
             request.setValue("2023-06-01", forHTTPHeaderField: "anthropic-version")
+            if config.provider.needsWorkspace { request.setValue(config.workspaceID, forHTTPHeaderField: "anthropic-workspace-id") }
             let jsonSchema = (schema["json_schema"] as? [String: Any])?["schema"] ?? [:]
             // Short language edits: low effort keeps the answer fast; thinking stays adaptive.
             var output: [String: Any] = ["effort": repair ? "medium" : "low"]
             // Bedrock's Messages endpoint does not take structured outputs; the answer is checked locally instead.
-            if config.provider == .anthropic { output["format"] = ["type": "json_schema", "schema": jsonSchema] }
+            if config.provider != .bedrock { output["format"] = ["type": "json_schema", "schema": jsonSchema] }
             body = ["model": config.model, "max_tokens": 16000, "system": system,
                     "messages": [["role": "user", "content": user]], "output_config": output]
-            if config.provider == .anthropic && fallbackModels.contains(config.model) {
+            // Server-side fallback: Claude API and Claude Platform on AWS, not Bedrock.
+            if config.provider != .bedrock && fallbackModels.contains(config.model) {
                 request.setValue("server-side-fallback-2026-07-01", forHTTPHeaderField: "anthropic-beta")
                 body["fallbacks"] = "default"
             }
@@ -109,7 +111,7 @@ public enum AIRequest {
     public static func content(_ data: Data, provider: AIProvider) -> String? {
         guard let envelope = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else { return nil }
         switch provider {
-        case .anthropic, .bedrock:
+        case .anthropic, .claudeAWS, .bedrock:
             // Refusals and max_tokens leave partial or empty JSON; thinking and fallback blocks are not text.
             guard envelope["stop_reason"] as? String == "end_turn", let blocks = envelope["content"] as? [[String: Any]] else { return nil }
             let text = blocks.filter { $0["type"] as? String == "text" }.compactMap { $0["text"] as? String }.joined()

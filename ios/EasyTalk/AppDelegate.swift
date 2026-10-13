@@ -203,7 +203,10 @@ final class SetupViewController: UIViewController, UITextFieldDelegate {
     init(prefill: ConnectionSettings? = nil) { self.prefill = prefill ?? ConnectionStore.read(); super.init(nibName: nil, bundle: nil) }
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
     private let providers = AIProvider.allCases
-    private lazy var providerControl = UISegmentedControl(items: providers.map(\.title))
+    /// Six providers do not fit a segmented control on a phone: a menu instead.
+    private let providerButton = UIButton(type: .system)
+    private var provider: AIProvider = .openai
+    private let workspace = UITextField()
     private let providerHelp = UILabel()
     private let model = UITextField()
     private let endpoint = UITextField()
@@ -244,11 +247,13 @@ final class SetupViewController: UIViewController, UITextFieldDelegate {
         stack.addArrangedSubview(textLabel("Выбери форму для фраз от первого лица: «я сделал» или «я сделала». Настройка общая с клавиатурой, её можно изменить и в ⚙ клавиатуры.", size: 16))
         stack.addArrangedSubview(textLabel("Подключение AI", size: 21))
         stack.addArrangedSubview(textLabel("Нужен только для кнопки «Перевести». «Скопировать контекст» работает без ключа. Ключ свой: клавиатура обращается к выбранному провайдеру напрямую.", size: 17))
-        providerControl.selectedSegmentIndex = providers.firstIndex(of: prefill?.provider ?? .openai) ?? 0
-        providerControl.accessibilityLabel = "Провайдер AI"
-        providerControl.addTarget(self, action: #selector(changeProvider), for: .valueChanged)
-        providerControl.heightAnchor.constraint(equalToConstant: 36).isActive = true
-        stack.addArrangedSubview(providerControl)
+        provider = prefill?.provider ?? .openai
+        providerButton.showsMenuAsPrimaryAction = true; providerButton.contentHorizontalAlignment = .leading
+        EasyTalkTheme.style(providerButton)
+        providerButton.titleLabel?.font = .systemFont(ofSize: 17, weight: .semibold)
+        providerButton.heightAnchor.constraint(equalToConstant: 44).isActive = true
+        updateProviderMenu()
+        stack.addArrangedSubview(providerButton)
         providerHelp.numberOfLines = 0; providerHelp.font = .systemFont(ofSize: 15); providerHelp.textColor = EasyTalkTheme.secondary
         stack.addArrangedSubview(providerHelp)
         endpoint.keyboardType = .URL; endpoint.autocapitalizationType = .none
@@ -265,7 +270,9 @@ final class SetupViewController: UIViewController, UITextFieldDelegate {
         model.accessibilityLabel = "Модель"
         let tap = UITapGestureRecognizer(target: self, action: #selector(hideKeyboard)); tap.cancelsTouchesInView = false
         view.addGestureRecognizer(tap)
-        for f in [endpoint, model, token] {
+        workspace.placeholder = "ID рабочего пространства: wrkspc_…"; workspace.borderStyle = .roundedRect
+        workspace.autocapitalizationType = .none; workspace.autocorrectionType = .no; workspace.accessibilityLabel = "ID рабочего пространства"
+        for f in [endpoint, workspace, model, token] {
             f.inputAccessoryView = keyboardDoneBar(self, #selector(hideKeyboard)); f.delegate = self; f.returnKeyType = .done
             f.font = .systemFont(ofSize: 17); f.backgroundColor = EasyTalkTheme.paper; f.textColor = EasyTalkTheme.ink; let h = f.heightAnchor.constraint(equalToConstant: 44)
             h.priority = .init(999); h.isActive = true; stack.addArrangedSubview(f)
@@ -273,7 +280,7 @@ final class SetupViewController: UIViewController, UITextFieldDelegate {
             if f === model { stack.addArrangedSubview(modelButton) }
         }
         changeProvider()
-        if let prefill { token.text = prefill.token; model.text = prefill.model; endpoint.text = prefill.baseURL }
+        if let prefill { token.text = prefill.token; model.text = prefill.model; endpoint.text = prefill.baseURL; workspace.text = prefill.workspaceID }
         keyChanged(); loadModels()
         let save = UIButton(type: .system); save.setTitle("Сохранить", for: .normal)
         EasyTalkTheme.style(save, primary: true, blue: true)
@@ -290,11 +297,25 @@ final class SetupViewController: UIViewController, UITextFieldDelegate {
         stack.addArrangedSubview(textLabel("В настройках клавиатуры iPhone включи «Полный доступ»: без него iOS не даёт клавиатуре ни сеть, ни общий ключ.", size: 17))
         stack.addArrangedSubview(textLabel("Ключ хранится только на этом iPhone, в защищённом хранилище, общем для приложения и клавиатуры. В буфер обмена он не копируется. Текст отправляется только по кнопке «Перевести».", size: 15))
     }
-    private var provider: AIProvider { providers.indices.contains(providerControl.selectedSegmentIndex) ? providers[providerControl.selectedSegmentIndex] : .openai }
+    private func updateProviderMenu() {
+        providerButton.setTitle("Провайдер: \(provider.title) ▾", for: .normal)
+        providerButton.accessibilityLabel = "Провайдер AI: \(provider.title)"
+        providerButton.menu = UIMenu(title: "Провайдер AI", children: providers.map { item in
+            UIAction(title: item.title, state: item == provider ? .on : .off) { [weak self] _ in
+                guard let self, item != self.provider else { return }
+                self.provider = item; self.updateProviderMenu(); self.changeProvider()
+            }
+        })
+    }
+    private var missingFieldsMessage: String {
+        if provider.needsWorkspace { return "Введи ключ, ID рабочего пространства (wrkspc_…), модель и адрес вида \(provider.addressHint)." }
+        return provider.editableBaseURL ? "Введи ключ, модель и HTTPS-адрес вида \(provider.addressHint)." : "Введи ключ \(provider.title) и название модели."
+    }
     /// A key belongs to one provider: switching clears it and restores that provider's defaults.
     @objc private func changeProvider() {
         let provider = self.provider
         endpoint.isHidden = !provider.editableBaseURL; endpoint.text = provider.defaultBaseURL
+        workspace.isHidden = !provider.needsWorkspace; workspace.text = ""
         endpoint.placeholder = provider.addressHint
         model.text = provider.defaultModel; model.placeholder = "Модель \(provider.title)"
         token.placeholder = provider.keyPlaceholder; token.text = ""
@@ -320,7 +341,8 @@ final class SetupViewController: UIViewController, UITextFieldDelegate {
     private var formConfig: ConnectionSettings {
         ConnectionSettings(provider: provider, apiKey: (token.text ?? "").trimmingCharacters(in: .whitespacesAndNewlines),
             model: (model.text ?? "").trimmingCharacters(in: .whitespacesAndNewlines),
-            baseURL: (endpoint.text ?? "").trimmingCharacters(in: .whitespacesAndNewlines), speakerGender: preferences.speakerGender)
+            baseURL: (endpoint.text ?? "").trimmingCharacters(in: .whitespacesAndNewlines),
+            workspaceID: workspace.text ?? "", speakerGender: preferences.speakerGender)
     }
     /// The key stays hidden; a masked summary and a warning show whether it is the right, complete key.
     @objc private func keyChanged() {
@@ -339,7 +361,9 @@ final class SetupViewController: UIViewController, UITextFieldDelegate {
     @objc private func loadModels() {
         modelsTask?.cancel()
         let config = formConfig
-        guard provider.keyWarning(config.token) == nil, let request = ModelCatalog.request(config: config) else { updateModelMenu(status: nil); return }
+        // A short-term key that is still valid works; any other warning means the key will be refused.
+        let stillValid = ConnectionSettings.temporaryKeyExpiry(config.token).map { $0 > Date() } ?? false
+        guard provider.keyWarning(config.token) == nil || stillValid, let request = ModelCatalog.request(config: config) else { updateModelMenu(status: nil); return }
         updateModelMenu(status: "Загружаю список моделей…")
         let provider = self.provider
         modelsTask = AnalysisService.session.dataTask(with: request) { [weak self] data, response, _ in
@@ -373,7 +397,7 @@ final class SetupViewController: UIViewController, UITextFieldDelegate {
         view.endEditing(true)
         let config = formConfig
         guard config.url != nil else {
-            message.text = provider.editableBaseURL ? "Введи ключ, модель и HTTPS-адрес вида \(provider.addressHint)." : "Введи ключ \(provider.title) и название модели."; return
+            message.text = missingFieldsMessage; return
         }
         checkOperation?.cancel(); message.text = "Проверяю на тестовой фразе «I want to купить coffee.»…"
         let started = Date()
@@ -395,7 +419,7 @@ final class SetupViewController: UIViewController, UITextFieldDelegate {
     @objc private func saveSettings() {
         let config = formConfig
         guard config.url != nil else {
-            message.text = provider.editableBaseURL ? "Введи ключ, модель и HTTPS-адрес вида \(provider.addressHint)." : "Введи ключ \(provider.title) и название модели."; return
+            message.text = missingFieldsMessage; return
         }
         guard ConnectionStore.write(config) else {
             message.text = "Не удалось сохранить подключение. Ключ остался в поле."; return

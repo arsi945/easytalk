@@ -210,13 +210,13 @@ final class DesktopModel: ObservableObject {
         feedbackTimer = Timer.scheduledTimer(withTimeInterval: 1.8, repeats: false) { [weak self] _ in self?.gameFeedback = nil }
         changed()
     }
-    @discardableResult func saveConnection(key: String, model: String, provider: AIProvider, baseURL: String = "") -> Bool {
+    @discardableResult func saveConnection(key: String, model: String, provider: AIProvider, baseURL: String = "", workspaceID: String = "") -> Bool {
         let key = key.trimmingCharacters(in: .whitespacesAndNewlines)
         // An empty field keeps the saved key, but only for the same provider.
         let secret = key.isEmpty && connection?.provider == provider ? connection?.token ?? "" : key
         let base = baseURL.trimmingCharacters(in: .whitespacesAndNewlines)
         let config = ConnectionSettings(provider: provider, apiKey: secret, model: model.trimmingCharacters(in: .whitespacesAndNewlines),
-                                        baseURL: base.isEmpty ? nil : base, speakerGender: gender)
+                                        baseURL: base.isEmpty ? nil : base, workspaceID: workspaceID, speakerGender: gender)
         guard config.url != nil else { notice = "Укажи ключ \(provider.title) и модель" + (provider.editableBaseURL ? " и адрес вида \(provider.addressHint)." : "."); return false }
         guard vault.write(config) else { notice = "Не удалось сохранить ключ в Keychain. Поле не очищено."; return false }
         invalidateRequest(); connection = config; notice = "Подключение сохранено в Keychain."; changed(); return true
