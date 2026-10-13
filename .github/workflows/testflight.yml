@@ -24,8 +24,9 @@ jobs:
       ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
       ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
       BUNDLE_ID_PREFIX: ${{ vars.BUNDLE_ID_PREFIX }}
-      # Номер сборки должен расти с каждой загрузкой; 26 — последняя локальная сборка.
-      BUILD_NUMBER_OFFSET: 26
+      # Номер сборки должен расти с каждой загрузкой. Публичный репозиторий начал счёт запусков заново,
+      # а в TestFlight уже есть сборка 38 из прежнего (приватного) репозитория.
+      BUILD_NUMBER_OFFSET: 40
     steps:
       - uses: actions/checkout@v4
 
@@ -36,6 +37,18 @@ jobs:
             if [ -z "${!name}" ]; then echo "::error::secret for $name is not set (see docs/CI.md)"; missing=1; fi
           done
           if [ -z "${{ secrets.ASC_PRIVATE_KEY }}" ]; then echo "::error::secret ASC_PRIVATE_KEY is not set (see docs/CI.md)"; missing=1; fi
+          # Secrets pasted with a space or a line break: trim, then check the format.
+          TEAM=$(printf '%s' "$TEAM_ID" | tr -d '[:space:]')
+          if ! printf '%s' "$TEAM" | grep -Eq '^[A-Z0-9]{10}$'; then
+            echo "::error::APPLE_TEAM_ID must be the 10-character Team ID from developer.apple.com → Membership details (now it is empty or has another format)"
+            missing=1
+          fi
+          # The repository is public, so are its logs: mask the trimmed values too.
+          KEY=$(printf '%s' "$ASC_KEY_ID" | tr -d '[:space:]'); ISSUER=$(printf '%s' "$ASC_ISSUER_ID" | tr -d '[:space:]')
+          for value in "$TEAM" "$KEY" "$ISSUER"; do [ -n "$value" ] && echo "::add-mask::$value"; done
+          echo "TEAM_ID=$TEAM" >> "$GITHUB_ENV"
+          echo "ASC_KEY_ID=$KEY" >> "$GITHUB_ENV"
+          echo "ASC_ISSUER_ID=$ISSUER" >> "$GITHUB_ENV"
           exit $missing
 
       - name: Write App Store Connect key
