@@ -379,6 +379,7 @@ private struct DesktopSettings: View {
     @State private var aiModel = "gpt-6-luna"
     @State private var endpoint = ""
     @State private var provider: AIProvider = .openai
+    @State private var workspace = ""
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 22) {
@@ -392,7 +393,7 @@ private struct DesktopSettings: View {
                 }.padding(20).background(DesktopPalette.cream).cornerRadius(16)
                 VStack(alignment: .leading, spacing: 14) {
                     Text("Подключение AI").font(.system(size: 19, weight: .semibold))
-                    Picker("Провайдер", selection: $provider) { ForEach(AIProvider.allCases, id: \.self) { Text($0.title).tag($0) } }.pickerStyle(.segmented).labelsHidden()
+                    Picker("Провайдер", selection: $provider) { ForEach(AIProvider.allCases, id: \.self) { Text($0.title).tag($0) } }.pickerStyle(.menu).labelsHidden()
                         .onChange(of: provider) { new in if model.connection?.provider != new { key = ""; aiModel = new.defaultModel; endpoint = new.defaultBaseURL } }
                     Text(provider.keyHelp).font(.system(size: 12)).foregroundColor(.secondary).fixedSize(horizontal: false, vertical: true)
                     HStack {
@@ -402,8 +403,9 @@ private struct DesktopSettings: View {
                     if model.connection != nil { Text("Ключ сохранён. Оставь поле пустым, чтобы сохранить прежний.").font(.system(size: 12)).foregroundColor(.secondary) }
                     TextField("Модель", text: $aiModel).textFieldStyle(.roundedBorder)
                     if provider.editableBaseURL { TextField(provider.addressHint, text: $endpoint).textFieldStyle(.roundedBorder) }
+                    if provider.needsWorkspace { TextField("ID рабочего пространства: wrkspc_…", text: $workspace).textFieldStyle(.roundedBorder) }
                     VStack(alignment: .leading, spacing: 10) {
-                        Button("Сохранить подключение") { if model.saveConnection(key: key, model: aiModel, provider: provider, baseURL: endpoint) { key = model.connection?.token ?? ""; showKey = false } }.buttonStyle(DesktopAction(primary: true))
+                        Button("Сохранить подключение") { if model.saveConnection(key: key, model: aiModel, provider: provider, baseURL: endpoint, workspaceID: workspace) { key = model.connection?.token ?? ""; showKey = false } }.buttonStyle(DesktopAction(primary: true))
                         if model.connection != nil { Button("Отключить AI", action: model.disconnect).buttonStyle(DesktopAction()) }
                     }
                     Text("В AI отправляется выделение или текущий абзац, когда ты нажимаешь «Перевести». Ключ хранится в Keychain этого Mac.").font(.system(size: 13)).foregroundColor(.secondary).fixedSize(horizontal: false, vertical: true)
@@ -411,6 +413,6 @@ private struct DesktopSettings: View {
                 }.padding(20).background(DesktopPalette.paper).cornerRadius(16)
                 Text("easytalk для macOS · 0.3.3\n⌃⌥Пробел открывает окно из другого приложения. Для автоматической вставки нужен доступ «Универсальный доступ»; обычное копирование работает сразу.").font(.system(size: 12)).foregroundColor(.secondary).fixedSize(horizontal: false, vertical: true)
             }.padding(.bottom, 16)
-        }.onAppear { if let c = model.connection { key = c.token; provider = c.provider; aiModel = c.model; endpoint = c.baseURL } }
+        }.onAppear { if let c = model.connection { key = c.token; provider = c.provider; aiModel = c.model; endpoint = c.baseURL; workspace = c.workspaceID } }
     }
 }

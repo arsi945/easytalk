@@ -5,13 +5,15 @@ import EasyTalkCore
 
 /// AI providers the user can connect with a personal key. Each request goes straight from the device to the provider.
 public enum AIProvider: String, Codable, CaseIterable {
+    /// `claudeAWS`: Claude Platform on AWS (Anthropic-operated, AWS billing) with an AWS Console API key and a workspace.
     /// `bedrock`: Claude in Amazon Bedrock (Messages API on bedrock-mantle) with a Bedrock API key.
-    case openai, anthropic, bedrock, qwen, deepseek
+    case openai, anthropic, claudeAWS = "claude_aws", bedrock, qwen, deepseek
 
     public var title: String {
         switch self {
         case .openai: return "OpenAI"
         case .anthropic: return "Claude"
+        case .claudeAWS: return "Claude AWS"
         case .bedrock: return "Bedrock"
         case .qwen: return "Qwen"
         case .deepseek: return "DeepSeek"
@@ -21,6 +23,8 @@ public enum AIProvider: String, Codable, CaseIterable {
         switch self {
         case .openai: return "https://api.openai.com/v1"
         case .anthropic: return "https://api.anthropic.com/v1"
+        // The workspace's region is part of the address.
+        case .claudeAWS: return "https://aws-external-anthropic.us-east-1.api.aws/v1"
         // The region is part of the address; it must be one where Claude model access is enabled.
         case .bedrock: return "https://bedrock-mantle.us-east-1.api.aws/anthropic/v1"
         // Alibaba Model Studio hosts are per region/workspace; Virginia has a shared host.
@@ -31,7 +35,7 @@ public enum AIProvider: String, Codable, CaseIterable {
     public var defaultModel: String {
         switch self {
         case .openai: return "gpt-6-luna"
-        case .anthropic: return "claude-opus-5-5"
+        case .anthropic, .claudeAWS: return "claude-opus-5-5"
         case .bedrock: return "anthropic.claude-opus-5-5"
         case .qwen: return "qwen3.7-plus"
         case .deepseek: return "deepseek-flash"
@@ -41,7 +45,7 @@ public enum AIProvider: String, Codable, CaseIterable {
     public var suggestedModels: [String] {
         switch self {
         case .openai: return ["gpt-6-luna"]
-        case .anthropic: return ["claude-opus-5-5", "claude-sonnet-5-5", "claude-haiku-5-5", "claude-fable-5-1"]
+        case .anthropic, .claudeAWS: return ["claude-opus-5-5", "claude-sonnet-5-5", "claude-haiku-5-5", "claude-fable-5-1"]
         // Bedrock has no model list endpoint; Opus/Sonnet/Haiku 5.5 may need access granted in the AWS console.
         case .bedrock: return ["anthropic.claude-opus-5-5", "anthropic.claude-sonnet-5-5", "anthropic.claude-haiku-5-5",
                                "anthropic.claude-sonnet-5", "anthropic.claude-opus-4-8", "anthropic.claude-haiku-4-5"]
@@ -49,12 +53,15 @@ public enum AIProvider: String, Codable, CaseIterable {
         case .deepseek: return ["deepseek-flash", "deepseek-v4-pro"]
         }
     }
-    /// Qwen (region and workspace) and Bedrock (AWS region) need a user-specific address.
-    public var editableBaseURL: Bool { self == .qwen || self == .bedrock }
-    /// The Messages API format of Anthropic (Claude and Bedrock) instead of chat completions.
-    public var usesMessagesAPI: Bool { self == .anthropic || self == .bedrock }
+    /// Qwen (region and workspace) and the AWS options (region) need a user-specific address.
+    public var editableBaseURL: Bool { self == .qwen || self == .bedrock || self == .claudeAWS }
+    /// The Messages API format of Anthropic (Claude, Claude AWS, Bedrock) instead of chat completions.
+    public var usesMessagesAPI: Bool { self == .anthropic || self == .claudeAWS || self == .bedrock }
+    /// Claude Platform on AWS routes every request to a workspace (header anthropic-workspace-id).
+    public var needsWorkspace: Bool { self == .claudeAWS }
     public var addressHint: String {
         switch self {
+        case .claudeAWS: return "https://aws-external-anthropic.<регион>.api.aws/v1"
         case .bedrock: return "https://bedrock-mantle.<регион>.api.aws/anthropic/v1"
         default: return "https://…aliyuncs.com/compatible-mode/v1"
         }
@@ -64,6 +71,7 @@ public enum AIProvider: String, Codable, CaseIterable {
         switch self {
         case .openai: return host == "api.openai.com"
         case .anthropic: return host == "api.anthropic.com"
+        case .claudeAWS: return host.hasPrefix("aws-external-anthropic.") && host.hasSuffix(".api.aws")
         case .bedrock: return host.hasPrefix("bedrock-mantle.") && host.hasSuffix(".api.aws")
         case .qwen: return host.hasSuffix(".aliyuncs.com")
         case .deepseek: return host == "api.deepseek.com"
@@ -73,20 +81,31 @@ public enum AIProvider: String, Codable, CaseIterable {
         switch self {
         case .openai: return "Ключ OpenAI: sk-…"
         case .anthropic: return "Ключ Claude API: sk-ant-…"
+        case .claudeAWS: return "Ключ API Claude Platform on AWS"
         case .bedrock: return "Ключ API Amazon Bedrock"
         case .qwen: return "Ключ Alibaba Model Studio"
         case .deepseek: return "Ключ DeepSeek: sk-…"
         }
     }
     /// Why a key probably will not work with this provider, before any request.
-    public func keyWarning(_ key: String) -> String? {
+    public func keyWarning(_ key: String, now: Date = Date()) -> String? {
         let key = ConnectionSettings.cleanKey(key)
         guard !key.isEmpty else { return nil }
+        if let expiry = ConnectionSettings.temporaryKeyExpiry(key) {
+            let formatter = DateFormatter()
+            formatter.locale = Locale(identifier: "ru_RU"); formatter.dateFormat = "d MMMM, HH:mm"
+            let permanent = self == .bedrock ? "консоль AWS → Amazon Bedrock → API keys" : "консоль AWS → Claude Platform on AWS → API keys → Generate a key"
+            if expiry <= now { return "Временный ключ истёк \(formatter.string(from: expiry)). Создай постоянный: \(permanent)." }
+            return "Временный ключ: действует до \(formatter.string(from: expiry)). Для телефона лучше постоянный: \(permanent)."
+        }
         if key.contains("…") || key.contains("...") || key.contains("*") {
             return "В ключе есть «…» или «*» — это сокращённая версия из списка ключей. Нужна полная: её показывают один раз при создании ключа."
         }
         if self == .anthropic && !key.hasPrefix("sk-ant-") {
             return "Ключ Claude начинается с «sk-ant-». Этот — нет: похоже, это ключ другого сервиса."
+        }
+        if self == .claudeAWS && key.hasPrefix("sk-ant-") {
+            return "Ключ из Claude Console не работает с Claude Platform on AWS. Нужен ключ из консоли AWS — или выбери «Claude»."
         }
         if self == .bedrock && key.hasPrefix("sk-ant-") {
             return "Это ключ Anthropic (console.anthropic.com). Для Bedrock нужен ключ API из консоли AWS — или выбери «Claude»."
@@ -98,6 +117,7 @@ public enum AIProvider: String, Codable, CaseIterable {
         switch self {
         case .openai: return "Ключ: platform.openai.com → API keys."
         case .anthropic: return "Ключ: console.anthropic.com → API Keys. Оплата отдельно от подписки Claude."
+        case .claudeAWS: return "Постоянный ключ: консоль AWS → Claude Platform on AWS → API keys → Generate a key. ID рабочего пространства (wrkspc_…) — в разделе Workspaces. В адресе — регион рабочего пространства."
         case .bedrock: return "Ключ: консоль AWS → Amazon Bedrock → API keys. В адресе — регион, где включён доступ к моделям Claude (Model access)."
         case .qwen: return "Ключ и адрес своего региона: Alibaba Cloud Model Studio → API Keys. Ключ работает только в своём регионе."
         case .deepseek: return "Ключ: platform.deepseek.com → API keys."
@@ -112,9 +132,13 @@ public struct ConnectionSettings: Codable {
     public var token: String
     public var model: String
     public var speakerGender: SpeakerGender
+    /// Claude Platform on AWS only: the workspace (wrkspc_…) the requests go to.
+    public var workspaceID: String
 
-    public init(provider: AIProvider, apiKey: String, model: String? = nil, baseURL: String? = nil, speakerGender: SpeakerGender = .unspecified) {
+    public init(provider: AIProvider, apiKey: String, model: String? = nil, baseURL: String? = nil, workspaceID: String = "",
+                speakerGender: SpeakerGender = .unspecified) {
         self.provider = provider; token = Self.cleanKey(apiKey)
+        self.workspaceID = provider.needsWorkspace ? Self.cleanKey(workspaceID) : ""
         self.model = model ?? provider.defaultModel
         self.baseURL = provider.editableBaseURL ? (baseURL ?? provider.defaultBaseURL) : provider.defaultBaseURL
         self.speakerGender = speakerGender
@@ -135,11 +159,28 @@ public struct ConnectionSettings: Codable {
         guard key.count >= 16 else { return "Ключ: \(key.count) символов" }
         return "Ключ: \(key.prefix(9))…\(key.suffix(4)) · \(key.count) символов"
     }
+    /// Short-term AWS keys (generated from AWS credentials, at most 12 hours) are a base64 presigned request:
+    /// its X-Amz-Date and X-Amz-Expires tell when the key stops working. Nil for any other key.
+    public static func temporaryKeyExpiry(_ key: String) -> Date? {
+        let key = cleanKey(key)
+        guard let prefix = ["aws-external-anthropic-api-key-", "bedrock-api-key-"].first(where: { key.hasPrefix($0) }) else { return nil }
+        var encoded = String(key.dropFirst(prefix.count)).replacingOccurrences(of: "-", with: "+").replacingOccurrences(of: "_", with: "/")
+        while encoded.count % 4 != 0 { encoded += "=" }
+        guard let data = Data(base64Encoded: encoded), let text = String(data: data, encoding: .utf8),
+              let query = URLComponents(string: text.hasPrefix("http") ? text : "https://" + text)?.queryItems,
+              let start = query.first(where: { $0.name == "X-Amz-Date" })?.value,
+              let seconds = query.first(where: { $0.name == "X-Amz-Expires" })?.value.flatMap(Double.init) else { return nil }
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX"); formatter.timeZone = TimeZone(identifier: "UTC")
+        formatter.dateFormat = "yyyyMMdd'T'HHmmss'Z'"
+        return formatter.date(from: start)?.addingTimeInterval(seconds)
+    }
 
     enum CodingKeys: String, CodingKey {
         case provider, token, model
         case baseURL = "base_url"
         case speakerGender = "speaker_gender"
+        case workspaceID = "workspace_id"
         // Saved before providers: {"mode": "openai" | "server", "endpoint": …}.
         case mode, endpoint
     }
@@ -157,23 +198,25 @@ public struct ConnectionSettings: Codable {
         token = try c.decode(String.self, forKey: .token)
         model = try c.decodeIfPresent(String.self, forKey: .model) ?? provider.defaultModel
         speakerGender = try c.decodeIfPresent(SpeakerGender.self, forKey: .speakerGender) ?? .unspecified
+        workspaceID = try c.decodeIfPresent(String.self, forKey: .workspaceID) ?? ""
     }
     public func encode(to encoder: Encoder) throws {
         var c = encoder.container(keyedBy: CodingKeys.self)
         try c.encode(provider, forKey: .provider); try c.encode(baseURL, forKey: .baseURL)
         try c.encode(token, forKey: .token); try c.encode(model, forKey: .model)
         try c.encode(speakerGender, forKey: .speakerGender)
+        if provider.needsWorkspace { try c.encode(workspaceID, forKey: .workspaceID) }
     }
 
     /// The provider's model list, checked like `url`.
     public var modelsURL: URL? {
         let base = baseURL.trimmingCharacters(in: .whitespacesAndNewlines).trimmingCharacters(in: CharacterSet(charactersIn: "/"))
         // Bedrock has no model list endpoint.
-        guard provider != .bedrock, !token.isEmpty, var components = URLComponents(string: base + "/models"), components.scheme == "https",
+        guard provider != .bedrock, !token.isEmpty, !provider.needsWorkspace || !workspaceID.isEmpty, var components = URLComponents(string: base + "/models"), components.scheme == "https",
               let host = components.host?.lowercased(), provider.allows(host: host),
               components.user == nil, components.password == nil, components.query == nil, components.fragment == nil else { return nil }
         // Anthropic pages by 20 by default.
-        if provider == .anthropic { components.queryItems = [URLQueryItem(name: "limit", value: "100")] }
+        if provider.usesMessagesAPI { components.queryItems = [URLQueryItem(name: "limit", value: "100")] }
         return components.url
     }
 
@@ -182,6 +225,7 @@ public struct ConnectionSettings: Codable {
         let base = baseURL.trimmingCharacters(in: .whitespacesAndNewlines).trimmingCharacters(in: CharacterSet(charactersIn: "/"))
         let path = provider.usesMessagesAPI ? "/messages" : "/chat/completions"
         guard !token.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty, !model.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+              !provider.needsWorkspace || !workspaceID.isEmpty,
               let url = URL(string: base + path), url.scheme == "https", let host = url.host?.lowercased(), provider.allows(host: host),
               url.user == nil, url.password == nil, url.query == nil, url.fragment == nil else { return nil }
         return url
@@ -194,9 +238,10 @@ public enum ModelCatalog {
         guard let url = config.modelsURL else { return nil }
         var request = URLRequest(url: url, timeoutInterval: 15)
         request.httpMethod = "GET"
-        if config.provider == .anthropic {
+        if config.provider.usesMessagesAPI {
             request.setValue(config.token, forHTTPHeaderField: "x-api-key")
             request.setValue("2023-06-01", forHTTPHeaderField: "anthropic-version")
+            if config.provider.needsWorkspace { request.setValue(config.workspaceID, forHTTPHeaderField: "anthropic-workspace-id") }
         } else {
             request.setValue("Bearer " + config.token, forHTTPHeaderField: "Authorization")
         }
@@ -209,13 +254,13 @@ public enum ModelCatalog {
               let items = envelope["data"] as? [[String: Any]] else { return [] }
         var seen = Set<String>()
         let ids = items.compactMap { $0["id"] as? String }.filter { usable($0, provider: provider) && seen.insert($0).inserted }
-        return provider == .anthropic ? ids : ids.sorted()
+        return provider.usesMessagesAPI ? ids : ids.sorted()
     }
 
     static func usable(_ id: String, provider: AIProvider) -> Bool {
         let model = id.lowercased()
         switch provider {
-        case .anthropic: return model.hasPrefix("claude-")
+        case .anthropic, .claudeAWS: return model.hasPrefix("claude-")
         case .bedrock: return model.hasPrefix("anthropic.claude")
         case .deepseek: return model.hasPrefix("deepseek")
         case .qwen:
