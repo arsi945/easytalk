@@ -430,6 +430,30 @@ enum LearningTests {
         check(TypingRules.wordDeletionLength(before: "don't") == 5 && TypingRules.wordDeletionLength(before: "Hi!") == 1 && TypingRules.wordDeletionLength(before: "") == 0,
               "apostrophes stay in the word; punctuation goes one character at a time")
 
+        // Word suggestions: only offered, own words and text replacements first, case kept.
+        check(WordSuggestions.currentWord(before: "I want to buy coff") == "coff" && WordSuggestions.currentWord(before: "Hello, don't") == "don't"
+              && WordSuggestions.currentWord(before: "end ") == "" && WordSuggestions.currentWord(before: "(привет") == "привет", "word before the cursor")
+        check(WordSuggestions.language(of: "прив", russianLayout: false) == "ru_RU" && WordSuggestions.language(of: "hel", russianLayout: true) == "en_US"
+              && WordSuggestions.language(of: "12", russianLayout: true) == "ru_RU", "spell checker language by script, else by layout")
+        let own = WordSuggestions.vocabulary(from: ["Max will call. Max knows", "the meeting with max", "Meeting at 5", "meeting moved"])
+        check(own["max"]?.text == "max" && own["max"]?.count == 3 && own["meeting"]?.count == 3 && own["meeting"]?.text == "meeting" && own["5"] == nil,
+              "own words counted; lowercase form wins over sentence-start capital")
+        let names = WordSuggestions.vocabulary(from: ["Ruslan wrote", "ask Ruslan"])
+        check(names["ruslan"]?.text == "Ruslan", "a name always written with a capital keeps it")
+        let suggested = WordSuggestions.suggest(for: "mee", replacements: [:], vocabulary: own, isMisspelled: false, guesses: [], completions: ["meet", "meeting", "meet"])
+        check(suggested.map(\.text) == ["meeting", "meet"] && suggested.first?.kind == .history, "own word first, then completions, no duplicates")
+        let corrected = WordSuggestions.suggest(for: "Teh", replacements: [:], vocabulary: [:], isMisspelled: true, guesses: ["the", "ten"], completions: [])
+        check(corrected.map(\.text) == ["The", "Ten"] && corrected.allSatisfy { $0.kind == .correction }, "corrections keep the typed capital")
+        check(WordSuggestions.suggest(for: "Ruslan", replacements: [:], vocabulary: names, isMisspelled: true, guesses: ["Russian"], completions: []).isEmpty,
+              "a word the user often writes is not 'corrected'")
+        let shortcut = WordSuggestions.suggest(for: "спс", replacements: ["спс": "спасибо"], vocabulary: [:], isMisspelled: true, guesses: ["спа"], completions: [])
+        check(shortcut.first == WordSuggestion(text: "спасибо", kind: .replacement) && shortcut.count == 2, "iOS text replacement comes first")
+        check(WordSuggestions.suggest(for: "HEL", replacements: [:], vocabulary: [:], isMisspelled: false, guesses: [], completions: ["hello"]).first?.text == "HELLO"
+              && WordSuggestions.suggest(for: "", replacements: [:], vocabulary: own, isMisspelled: false, guesses: [], completions: ["a"]).isEmpty,
+              "all caps kept; nothing for an empty word")
+        check(WordSuggestions.suggest(for: "coffee", replacements: [:], vocabulary: [:], isMisspelled: false, guesses: [], completions: ["coffee", "coffees"]).map(\.text) == ["coffees"],
+              "the typed word itself is not offered back")
+
         // «Скопировать контекст»: prompt, numbered messages, translation details, newest kept when too long.
         let exportDate = Date(timeIntervalSince1970: 1_800_000_000)
         let exported = ContextExport.text(entries: [

@@ -37,6 +37,11 @@ public final class KeyboardPreferences {
         get { defaults.bool(forKey: "keyboard.russian") }
         set { defaults.set(newValue, forKey: "keyboard.russian") }
     }
+    /// The word suggestion row above the letters. On by default.
+    public var suggestionsEnabled: Bool {
+        get { defaults.object(forKey: "keyboard.suggestions") == nil ? true : defaults.bool(forKey: "keyboard.suggestions") }
+        set { defaults.set(newValue, forKey: "keyboard.suggestions") }
+    }
     /// Light vibration on every key press (needs Full Access). On by default.
     public var hapticsEnabled: Bool {
         get { defaults.object(forKey: "keyboard.haptics") == nil ? true : defaults.bool(forKey: "keyboard.haptics") }
