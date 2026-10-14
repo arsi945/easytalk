@@ -7,6 +7,12 @@ final class KeyboardViewController: UIInputViewController, UIGestureRecognizerDe
     private var autoShift = false, capsLock = false
     private var lastShiftTap = Date.distantPast, lastSpaceAt = Date.distantPast
     private let haptic = UIImpactFeedbackGenerator(style: .light)
+    /// Suggestions only, never automatic replacement: the user's mistakes stay for the AI review.
+    private let suggestionBar = SuggestionBar()
+    private let spellChecker = UITextChecker()
+    private var textReplacements: [String: String] = [:]
+    private var knownWords: [String: KnownWord] = [:]
+    static let suggestionHeight: CGFloat = 40
     private var showingSettings = false, showingStudy = false, showingVocabulary = false, showingGame = false
     /// «Контекст»: copy the history of a period for any AI chat, paste words back from its answer.
     private var showingContext = false
@@ -60,7 +66,7 @@ final class KeyboardViewController: UIInputViewController, UIGestureRecognizerDe
     private let rewardBanner = WarmCard(padding: 8)
     private let rewardTitle = UILabel()
     private let celebration = CelebrationOverlay()
-    private let rewardsEnabled = UISwitch(), secondSkillEnabled = UISwitch(), historySwitch = UISwitch(), hapticsSwitch = UISwitch()
+    private let rewardsEnabled = UISwitch(), secondSkillEnabled = UISwitch(), historySwitch = UISwitch(), hapticsSwitch = UISwitch(), suggestionsSwitch = UISwitch()
     private var cursorPreferredX: Double?
     private var cursorDragging = false
     private var lastKeyWidth = 0
@@ -161,7 +167,8 @@ final class KeyboardViewController: UIInputViewController, UIGestureRecognizerDe
         secondSkillEnabled.addTarget(self, action: #selector(toggleSecondSkill), for: .valueChanged)
         historySwitch.addTarget(self, action: #selector(toggleHistory), for: .valueChanged)
         hapticsSwitch.addTarget(self, action: #selector(toggleHaptics), for: .valueChanged)
-        for (title, control) in [("Поощрения", rewardsEnabled), ("Второй навык", secondSkillEnabled), ("История вводов", historySwitch), ("Вибрация клавиш", hapticsSwitch)] {
+        suggestionsSwitch.addTarget(self, action: #selector(toggleSuggestions), for: .valueChanged)
+        for (title, control) in [("Поощрения", rewardsEnabled), ("Второй навык", secondSkillEnabled), ("История вводов", historySwitch), ("Вибрация клавиш", hapticsSwitch), ("Подсказки слов", suggestionsSwitch)] {
             control.onTintColor = EasyTalkTheme.gold; control.accessibilityLabel = title
             let row = UIStackView(arrangedSubviews: [label(title, size: 19, weight: .medium), control])
             row.alignment = .center; row.spacing = 12; fixedHeight(row, 44); settings.addArrangedSubview(row)
@@ -233,6 +240,17 @@ final class KeyboardViewController: UIInputViewController, UIGestureRecognizerDe
         let rewardRow = UIStackView(arrangedSubviews: [rewardIcon, rewardText, rewardClose]); rewardRow.spacing = 9; rewardRow.alignment = .center
         rewardBanner.addArrangedSubview(rewardRow); fixedHeight(rewardBanner, 64); rewardBanner.isHidden = true
         root.addArrangedSubview(rewardBanner)
+        suggestionBar.onPick = { [weak self] suggestion in self?.applySuggestion(suggestion) }
+        fixedHeight(suggestionBar, Self.suggestionHeight); suggestionBar.layer.cornerRadius = 9; suggestionBar.clipsToBounds = true
+        root.addArrangedSubview(suggestionBar)
+        // The user's iOS text replacements (and contact names, which are known words).
+        requestSupplementaryLexicon { [weak self] lexicon in
+            var replacements: [String: String] = [:]
+            for entry in lexicon.entries where !entry.userInput.isEmpty {
+                if entry.userInput.lowercased() != entry.documentText.lowercased() { replacements[entry.userInput.lowercased()] = entry.documentText }
+            }
+            DispatchQueue.main.async { self?.textReplacements = replacements; self?.updateSuggestions(); self?.render() }
+        }
         keys.axis = .vertical; keys.spacing = 5; root.addArrangedSubview(keys)
         celebration.translatesAutoresizingMaskIntoConstraints = false; celebration.isUserInteractionEnabled = false; celebration.accessibilityElementsHidden = true
         view.addSubview(celebration)
@@ -253,6 +271,9 @@ final class KeyboardViewController: UIInputViewController, UIGestureRecognizerDe
         // The key, the dictionary and the history may have been changed in the app while the keyboard stayed loaded.
         if request == nil { connection = ConnectionStore.read() }
         store.reloadWords(); history.reload()
+        // The user's own words: suggested first and never treated as misspellings.
+        knownWords = WordSuggestions.vocabulary(from: history.entries.map(\.text))
+        updateSuggestions()
         render()
     }
     override func viewWillDisappear(_ animated: Bool) {
@@ -268,7 +289,7 @@ final class KeyboardViewController: UIInputViewController, UIGestureRecognizerDe
         // Proxy callbacks are frequent during a trackpad drag. Rebuilding the
         // panel mid-touch changes its coordinates and loses responsiveness.
         guard !cursorDragging else { return }
-        updateAutoShift()
+        updateAutoShift(); updateSuggestions()
         let current = snapshot()
         if showingStudy, let previous = studyHostSnapshot, current != previous {
             cancelStudyAction(); showingStudy = false; showingVocabulary = false; showingGame = false
@@ -450,7 +471,7 @@ final class KeyboardViewController: UIInputViewController, UIGestureRecognizerDe
         sentDetector.noteDeletion()
         cancelRequest(); clearReward(); translatedSnapshot = nil; note = ""
         for _ in 0..<count { if let previewDelete { previewDelete() } else { textDocumentProxy.deleteBackward() } }
-        updateAutoShift(); render()
+        updateAutoShift(); updateSuggestions(); render()
     }
     private func moveCursor(_ steps: Int, rows: Int = 0) {
         guard steps != 0 || rows != 0 else { return }; cancelRequest(); note = ""
@@ -477,6 +498,7 @@ final class KeyboardViewController: UIInputViewController, UIGestureRecognizerDe
         speakerGender.selectedSegmentIndex = SpeakerGender.allCases.firstIndex(of: preferences.speakerGender) ?? 0
         rewardsEnabled.isOn = preferences.rewardsEnabled; secondSkillEnabled.isOn = preferences.secondSkillEnabled
         historySwitch.isOn = preferences.historyEnabled; hapticsSwitch.isOn = preferences.hapticsEnabled
+        suggestionsSwitch.isOn = preferences.suggestionsEnabled
         symbolsEnabled.isOn = preferences.symbolRowEnabled
         symbolsPreview.text = preferences.symbols.isEmpty ? "Нет выбранных знаков" : preferences.symbols.joined(separator: "   ")
         if symbolChoices.arrangedSubviews.isEmpty {
@@ -513,6 +535,29 @@ final class KeyboardViewController: UIInputViewController, UIGestureRecognizerDe
     }
     @objc private func resetSymbols() { preferences.resetSymbols(); settingsFeedback.isHidden = true; rebuildKeys(); render() }
     @objc private func toggleHaptics() { preferences.hapticsEnabled = hapticsSwitch.isOn }
+    @objc private func toggleSuggestions() { preferences.suggestionsEnabled = suggestionsSwitch.isOn; updateSuggestions(); render() }
+    /// Suggestions for the word before the cursor; nothing is replaced unless the user taps one.
+    private func updateSuggestions() {
+        guard preferences.suggestionsEnabled, !numbers, previewSnapshot == nil else { suggestionBar.show([]); return }
+        let word = WordSuggestions.currentWord(before: textDocumentProxy.documentContextBeforeInput ?? "")
+        // Only at the end of a word: inside one, a suggestion would replace half of it.
+        if let next = textDocumentProxy.documentContextAfterInput?.first, next.isLetter || next.isNumber { suggestionBar.show([]); return }
+        guard !word.isEmpty else { suggestionBar.show([]); return }
+        let language = WordSuggestions.language(of: word, russianLayout: russian)
+        let range = NSRange(location: 0, length: word.utf16.count)
+        let misspelled = spellChecker.rangeOfMisspelledWord(in: word, range: range, startingAt: 0, wrap: false, language: language).location != NSNotFound
+        let guesses = misspelled ? (spellChecker.guesses(forWordRange: range, in: word, language: language) ?? []) : []
+        let completions = spellChecker.completions(forPartialWordRange: range, in: word, language: language) ?? []
+        suggestionBar.show(WordSuggestions.suggest(for: word, replacements: textReplacements, vocabulary: knownWords,
+                                                   isMisspelled: misspelled, guesses: guesses, completions: completions))
+    }
+    /// Replaces the word before the cursor with the chosen suggestion and a space.
+    private func applySuggestion(_ suggestion: WordSuggestion) {
+        let word = WordSuggestions.currentWord(before: textDocumentProxy.documentContextBeforeInput ?? "")
+        guard !word.isEmpty else { return }
+        for _ in word { if let previewDelete { previewDelete() } else { textDocumentProxy.deleteBackward() } }
+        type(suggestion.text + " ")
+    }
     @objc private func hideKeyboard() { dismissKeyboard() }
     @objc private func toggleHistory() { preferences.historyEnabled = historySwitch.isOn; sentDetector = SentTextDetector(); render() }
     @objc private func clearInputHistory() { history.clear(); sentDetector = SentTextDetector(); note = "История вводов очищена."; render() }
@@ -538,6 +583,8 @@ final class KeyboardViewController: UIInputViewController, UIGestureRecognizerDe
         study.setTitle(view.bounds.width < 370 ? "Урок" : "Последний урок", for: .normal)
         translationControl.superview?.subviews.first(where: { $0.accessibilityIdentifier == "toolbar-spacer" })?.isHidden = showingPanel
         keys.isHidden = showingPanel
+        // Hidden until there is a suggestion, so the keyboard is only taller while it helps.
+        suggestionBar.isHidden = showingPanel || !preferences.suggestionsEnabled || !suggestionBar.hasSuggestions
         rewardBanner.isHidden = rewardTitle.text == nil || !preferences.rewardsEnabled || showingPanel
         status.isHidden = note.isEmpty || showingPanel || !rewardBanner.isHidden; status.text = note
         translate.setTitle(busy ? "Отменить" : "Перевести", for: .normal)
@@ -575,7 +622,9 @@ final class KeyboardViewController: UIInputViewController, UIGestureRecognizerDe
         let panelHeight: CGFloat = showingGame ? 280 : 320
         lessonHeight?.constant = panelHeight
         if showingStudy { sizes.append(panelHeight) }
-        if !status.isHidden { sizes.append(56) }; if !rewardBanner.isHidden { sizes.append(64) }; if !keys.isHidden {
+        if !status.isHidden { sizes.append(56) }; if !rewardBanner.isHidden { sizes.append(64) }
+        if !suggestionBar.isHidden { sizes.append(Self.suggestionHeight) }
+        if !keys.isHidden {
             let extraRows = keys.arrangedSubviews.count - 4
             sizes.append(4 * 48 + CGFloat(extraRows) * 44 + CGFloat(keys.arrangedSubviews.count - 1) * 5)
         }
@@ -1031,11 +1080,11 @@ final class KeyboardViewController: UIInputViewController, UIGestureRecognizerDe
     private func type(_ value: String) {
         sentDetector.noteInsertion()
         cancelRequest(); clearReward(); translatedSnapshot = nil; note = ""
-        if let previewType { previewType(value) } else { textDocumentProxy.insertText(value) }; updateAutoShift(); render()
+        if let previewType { previewType(value) } else { textDocumentProxy.insertText(value) }; updateAutoShift(); updateSuggestions(); render()
     }
     private func backspace() {
         sentDetector.noteDeletion()
-        cancelRequest(); clearReward(); translatedSnapshot = nil; note = ""; if let previewDelete { previewDelete() } else { textDocumentProxy.deleteBackward() }; updateAutoShift(); render()
+        cancelRequest(); clearReward(); translatedSnapshot = nil; note = ""; if let previewDelete { previewDelete() } else { textDocumentProxy.deleteBackward() }; updateAutoShift(); updateSuggestions(); render()
     }
     private func toggleLanguage() { russian.toggle(); preferences.russianLayout = russian; rebuildKeys(); updateAutoShift() }
     private func toggleNumbers() { numbers.toggle(); symbols = false; shifted = false; rebuildKeys() }

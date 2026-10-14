@@ -82,6 +82,8 @@ learning = file("../Sources/EasyTalkCore/Learning.swift")
 learning_store = file("Shared/LearningStore.swift")
 cursor_navigation = file("../Sources/EasyTalkCore/CursorNavigation.swift")
 typing_rules = file("../Sources/EasyTalkCore/TypingRules.swift")
+word_suggestions = file("../Sources/EasyTalkCore/WordSuggestions.swift")
+suggestion_bar = file("Keyboard/SuggestionBar.swift")
 keyboard_preferences = file("Shared/KeyboardPreferences.swift")
 study_practice = file("Shared/StudyPractice.swift")
 study_content = file("../Sources/EasyTalkCore/StudyContent.swift")
@@ -106,7 +108,7 @@ keyboard_info = file("Keyboard/Info.plist", "text.plist.xml")
 app_product = obj("app-product", "PBXFileReference", explicitFileType="wrapper.application", path="EasyTalk.app", sourceTree="BUILT_PRODUCTS_DIR")
 keyboard_product = obj("keyboard-product", "PBXFileReference", explicitFileType="wrapper.app-extension", path="EasyTalkKeyboard.appex", sourceTree="BUILT_PRODUCTS_DIR")
 products = obj("products", "PBXGroup", children=[app_product, keyboard_product], name="Products", sourceTree="<group>")
-main = obj("main", "PBXGroup", children=[app_source, history_screen, keyboard_source, settings, shared_storage, input_history, context_export, context_prompt, contracts, learning, learning_store, cursor_navigation, typing_rules, keyboard_preferences, study_practice, second_skill, idiom_catalog, study_content, study_action, study_prompt, speech, app_theme, document_bridge, document_bridge_header, bridging_header, analysis_service, keyboard_key, study_pager, analysis_prompt, app_info, app_entitlements, app_assets, keyboard_info, keyboard_entitlements, products], sourceTree="<group>")
+main = obj("main", "PBXGroup", children=[app_source, history_screen, keyboard_source, settings, shared_storage, input_history, context_export, context_prompt, contracts, learning, learning_store, cursor_navigation, typing_rules, word_suggestions, suggestion_bar, keyboard_preferences, study_practice, second_skill, idiom_catalog, study_content, study_action, study_prompt, speech, app_theme, document_bridge, document_bridge_header, bridging_header, analysis_service, keyboard_key, study_pager, analysis_prompt, app_info, app_entitlements, app_assets, keyboard_info, keyboard_entitlements, products], sourceTree="<group>")
 
 def configs(name, extra):
     ids = []
@@ -135,7 +137,7 @@ common = dict(CODE_SIGN_STYLE="Automatic", TARGETED_DEVICE_FAMILY="1", CURRENT_P
               # One App Group for shared defaults and Keychain; CI may rewrite the prefix.
               APP_GROUP_IDENTIFIER="group.com.easytalk.personal",
               PRODUCT_NAME="$(TARGET_NAME)", GENERATE_INFOPLIST_FILE="NO")
-shared_sources = [settings, shared_storage, input_history, context_export, context_prompt, contracts, learning, learning_store, cursor_navigation, typing_rules, keyboard_preferences, study_practice, second_skill, idiom_catalog, study_content, study_action, study_prompt, speech, app_theme, document_bridge, analysis_service, keyboard_key, study_pager, analysis_prompt]
+shared_sources = [settings, shared_storage, input_history, context_export, context_prompt, contracts, learning, learning_store, cursor_navigation, typing_rules, word_suggestions, suggestion_bar, keyboard_preferences, study_practice, second_skill, idiom_catalog, study_content, study_action, study_prompt, speech, app_theme, document_bridge, analysis_service, keyboard_key, study_pager, analysis_prompt]
 keyboard = obj("keyboard-target", "PBXNativeTarget",
     buildConfigurationList=configs("keyboard", dict(common, INFOPLIST_FILE="Keyboard/Info.plist",
         PRODUCT_BUNDLE_IDENTIFIER="com.easytalk.personal.keyboard", CODE_SIGN_ENTITLEMENTS="Keyboard/EasyTalkKeyboard.entitlements",
