@@ -249,7 +249,7 @@ final class KeyboardViewController: UIInputViewController, UIGestureRecognizerDe
             for entry in lexicon.entries where !entry.userInput.isEmpty {
                 if entry.userInput.lowercased() != entry.documentText.lowercased() { replacements[entry.userInput.lowercased()] = entry.documentText }
             }
-            DispatchQueue.main.async { self?.textReplacements = replacements; self?.updateSuggestions() }
+            DispatchQueue.main.async { self?.textReplacements = replacements; self?.updateSuggestions(); self?.render() }
         }
         keys.axis = .vertical; keys.spacing = 5; root.addArrangedSubview(keys)
         celebration.translatesAutoresizingMaskIntoConstraints = false; celebration.isUserInteractionEnabled = false; celebration.accessibilityElementsHidden = true
@@ -583,7 +583,8 @@ final class KeyboardViewController: UIInputViewController, UIGestureRecognizerDe
         study.setTitle(view.bounds.width < 370 ? "Урок" : "Последний урок", for: .normal)
         translationControl.superview?.subviews.first(where: { $0.accessibilityIdentifier == "toolbar-spacer" })?.isHidden = showingPanel
         keys.isHidden = showingPanel
-        suggestionBar.isHidden = showingPanel || !preferences.suggestionsEnabled
+        // Hidden until there is a suggestion, so the keyboard is only taller while it helps.
+        suggestionBar.isHidden = showingPanel || !preferences.suggestionsEnabled || !suggestionBar.hasSuggestions
         rewardBanner.isHidden = rewardTitle.text == nil || !preferences.rewardsEnabled || showingPanel
         status.isHidden = note.isEmpty || showingPanel || !rewardBanner.isHidden; status.text = note
         translate.setTitle(busy ? "Отменить" : "Перевести", for: .normal)

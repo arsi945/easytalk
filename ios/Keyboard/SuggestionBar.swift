@@ -31,6 +31,9 @@ final class SuggestionBar: UIStackView {
     }
     required init(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
+    /// The row is shown only while there is something to offer.
+    var hasSuggestions: Bool { !items.isEmpty }
+
     func show(_ suggestions: [WordSuggestion]) {
         items = Array(suggestions.prefix(3))
         for (slot, button) in buttons.enumerated() {
