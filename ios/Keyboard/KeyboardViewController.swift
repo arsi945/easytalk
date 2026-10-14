@@ -67,6 +67,7 @@ final class KeyboardViewController: UIInputViewController, UIGestureRecognizerDe
     private let rewardTitle = UILabel()
     private let celebration = CelebrationOverlay()
     private let rewardsEnabled = UISwitch(), secondSkillEnabled = UISwitch(), historySwitch = UISwitch(), hapticsSwitch = UISwitch(), suggestionsSwitch = UISwitch()
+    private let tipsSwitch = UISwitch()
     private var cursorPreferredX: Double?
     private var cursorDragging = false
     private var lastKeyWidth = 0
@@ -77,7 +78,10 @@ final class KeyboardViewController: UIInputViewController, UIGestureRecognizerDe
     private let root = UIStackView()
     private let panelTitle = UILabel()
     private let speakerGender = UISegmentedControl(items: SpeakerGender.allCases.map { $0.title })
+    private let translateScope = UISegmentedControl(items: TranslateScope.allCases.map { $0.title })
     private let translate = UIButton(type: .system), study = UIButton(type: .system)
+    /// Shown instead of «Последний урок» while a word or short phrase is selected.
+    private let addWord = UIButton(type: .system)
     private let globeSwitch = UIButton(type: .system)
     private let status = UILabel()
     private let settings = UIStackView(), lessonContent = UIStackView()
@@ -128,7 +132,14 @@ final class KeyboardViewController: UIInputViewController, UIGestureRecognizerDe
         study.titleLabel?.font = .systemFont(ofSize: 14, weight: .regular); study.contentEdgeInsets = UIEdgeInsets(top: 0, left: 8, bottom: 0, right: 8)
         study.setContentHuggingPriority(.required, for: .horizontal)
         study.accessibilityLabel = "Открыть последний разбор"
+        configure(addWord, "В словарь", height: 36, action: #selector(addSelectionToDictionary))
+        addWord.titleLabel?.font = .systemFont(ofSize: 14, weight: .regular)
+        addWord.contentEdgeInsets = UIEdgeInsets(top: 0, left: 8, bottom: 0, right: 8)
+        addWord.setContentHuggingPriority(.required, for: .horizontal)
+        addWord.accessibilityIdentifier = "add-selection"
+        addWord.isHidden = true
         translationControl.addArrangedSubview(translate); translationControl.addArrangedSubview(study)
+        translationControl.addArrangedSubview(addWord)
         translationControl.spacing = 10
         translate.accessibilityIdentifier = "translate-input"; study.accessibilityIdentifier = "last-lesson"
         translationControl.setContentHuggingPriority(.required, for: .horizontal)
@@ -163,12 +174,21 @@ final class KeyboardViewController: UIInputViewController, UIGestureRecognizerDe
         speakerGender.accessibilityLabel = "Пол говорящего для перевода"
         fixedHeight(speakerGender, 36); settings.addArrangedSubview(speakerGender)
         settings.addArrangedSubview(label("Для фраз от твоего лица: «я сделал» или «я сделала». Других людей и цитаты эта настройка не меняет.", size: 16))
+        settings.addArrangedSubview(label("Что переводить", size: 19, weight: .medium))
+        translateScope.addTarget(self, action: #selector(changeTranslateScope), for: .valueChanged)
+        translateScope.accessibilityLabel = "Что переводить кнопкой «Перевести»"
+        fixedHeight(translateScope, 36)
+        settings.addArrangedSubview(translateScope)
+        let scopeHelp = "Без выделения «Перевести» берёт всё сообщение, абзац или предложение у курсора. "
+            + "Выделенный текст всегда переводится как есть."
+        settings.addArrangedSubview(label(scopeHelp, size: 16))
         rewardsEnabled.addTarget(self, action: #selector(toggleRewards), for: .valueChanged)
         secondSkillEnabled.addTarget(self, action: #selector(toggleSecondSkill), for: .valueChanged)
         historySwitch.addTarget(self, action: #selector(toggleHistory), for: .valueChanged)
         hapticsSwitch.addTarget(self, action: #selector(toggleHaptics), for: .valueChanged)
         suggestionsSwitch.addTarget(self, action: #selector(toggleSuggestions), for: .valueChanged)
-        for (title, control) in [("Поощрения", rewardsEnabled), ("Второй навык", secondSkillEnabled), ("История вводов", historySwitch), ("Вибрация клавиш", hapticsSwitch), ("Подсказки слов", suggestionsSwitch)] {
+        tipsSwitch.addTarget(self, action: #selector(toggleTips), for: .valueChanged)
+        for (title, control) in [("Поощрения", rewardsEnabled), ("Второй навык", secondSkillEnabled), ("История вводов", historySwitch), ("Вибрация клавиш", hapticsSwitch), ("Подсказки слов", suggestionsSwitch), ("Советы", tipsSwitch)] {
             control.onTintColor = EasyTalkTheme.gold; control.accessibilityLabel = title
             let row = UIStackView(arrangedSubviews: [label(title, size: 19, weight: .medium), control])
             row.alignment = .center; row.spacing = 12; fixedHeight(row, 44); settings.addArrangedSubview(row)
@@ -176,6 +196,10 @@ final class KeyboardViewController: UIInputViewController, UIGestureRecognizerDe
         settings.addArrangedSubview(label("Поощрения — поздравления и короткий салют за английский без ошибок. «Второй навык» — до 4 карточек за раз; открывается только по твоему желанию.", size: 16))
         settings.addArrangedSubview(label("История вводов — отправленные сообщения сохраняются только на этом iPhone, 90 дней, для «Скопировать контекст». Сообщение считается отправленным, когда поле очистилось не клавишей удаления.", size: 16))
         settings.addArrangedSubview(button("Очистить историю вводов", height: 36, action: #selector(clearInputHistory)))
+        let tipsHelp = "Подсказки слов — ряд над клавишами, появляется только когда есть что подсказать. "
+            + "Советы — короткая подсказка о клавиатуре при её появлении, не чаще раза в полчаса."
+        settings.addArrangedSubview(label(tipsHelp, size: 16))
+        settings.addArrangedSubview(button("Показать советы снова", height: 36, action: #selector(showTipsAgain)))
         symbolsEnabled.onTintColor = EasyTalkTheme.gold
         symbolsEnabled.addTarget(self, action: #selector(toggleSymbolRow), for: .valueChanged)
         symbolsEnabled.accessibilityLabel = "Ряд символов на основной клавиатуре"
@@ -189,8 +213,10 @@ final class KeyboardViewController: UIInputViewController, UIGestureRecognizerDe
         settingsFeedback.font = .systemFont(ofSize: 16); settingsFeedback.numberOfLines = 0; settingsFeedback.textColor = .systemOrange
         settingsFeedback.isHidden = true; settings.addArrangedSubview(settingsFeedback)
         settings.addArrangedSubview(button("Вернуть стандартные знаки", height: 40, action: #selector(resetSymbols)))
-        settings.addArrangedSubview(label("Что переводится", size: 20, weight: .semibold))
-        settings.addArrangedSubview(label("Выделенный текст или доступный абзац перед курсором. Последний набор отдельно не отслеживается. Вся заметка или файл автоматически не отправляется.", size: 17))
+        settings.addArrangedSubview(label("Что отправляется в AI", size: 20, weight: .semibold))
+        let sentText = "Только текст, который iOS показывает клавиатуре в этом поле: выделение или сообщение у курсора. "
+            + "В очень длинной заметке это может быть лишь часть рядом с курсором."
+        settings.addArrangedSubview(label(sentText, size: 17))
         settings.addArrangedSubview(label("Курсор", size: 20, weight: .semibold))
         settings.addArrangedSubview(label("Удерживай пробел и двигай палец влево, вправо, вверх или вниз.", size: 17))
         settings.addArrangedSubview(label("Подключение AI", size: 20, weight: .semibold))
@@ -274,6 +300,7 @@ final class KeyboardViewController: UIInputViewController, UIGestureRecognizerDe
         // The user's own words: suggested first and never treated as misspellings.
         knownWords = WordSuggestions.vocabulary(from: history.entries.map(\.text))
         updateSuggestions()
+        showNextTip()
         render()
     }
     override func viewWillDisappear(_ animated: Bool) {
@@ -496,9 +523,11 @@ final class KeyboardViewController: UIInputViewController, UIGestureRecognizerDe
     }
     private func renderSettings() {
         speakerGender.selectedSegmentIndex = SpeakerGender.allCases.firstIndex(of: preferences.speakerGender) ?? 0
+        translateScope.selectedSegmentIndex = TranslateScope.allCases.firstIndex(of: preferences.translateScope) ?? 0
         rewardsEnabled.isOn = preferences.rewardsEnabled; secondSkillEnabled.isOn = preferences.secondSkillEnabled
         historySwitch.isOn = preferences.historyEnabled; hapticsSwitch.isOn = preferences.hapticsEnabled
         suggestionsSwitch.isOn = preferences.suggestionsEnabled
+        tipsSwitch.isOn = preferences.tipsEnabled
         symbolsEnabled.isOn = preferences.symbolRowEnabled
         symbolsPreview.text = preferences.symbols.isEmpty ? "Нет выбранных знаков" : preferences.symbols.joined(separator: "   ")
         if symbolChoices.arrangedSubviews.isEmpty {
@@ -527,6 +556,12 @@ final class KeyboardViewController: UIInputViewController, UIGestureRecognizerDe
         preferences.speakerGender = SpeakerGender.allCases[speakerGender.selectedSegmentIndex]
         cancelRequest(); render()
     }
+    @objc private func changeTranslateScope() {
+        let index = translateScope.selectedSegmentIndex
+        guard TranslateScope.allCases.indices.contains(index) else { return }
+        preferences.translateScope = TranslateScope.allCases[index]
+        render()
+    }
     @objc private func selectSymbol(_ sender: UIButton) {
         guard let value = sender.accessibilityIdentifier else { return }
         let changed = preferences.toggle(value)
@@ -535,6 +570,19 @@ final class KeyboardViewController: UIInputViewController, UIGestureRecognizerDe
     }
     @objc private func resetSymbols() { preferences.resetSymbols(); settingsFeedback.isHidden = true; rebuildKeys(); render() }
     @objc private func toggleHaptics() { preferences.hapticsEnabled = hapticsSwitch.isOn }
+    @objc private func toggleTips() { preferences.tipsEnabled = tipsSwitch.isOn }
+    @objc private func showTipsAgain() {
+        preferences.resetTips()
+        tipsSwitch.isOn = true
+        settingsFeedback.text = "Советы начнутся заново при следующем появлении клавиатуры."
+        settingsFeedback.isHidden = false
+        render()
+    }
+    /// One tip in the status line when the keyboard appears; typing clears it. Not in the app's preview.
+    private func showNextTip() {
+        guard previewSnapshot == nil, note.isEmpty, !showingPanel, let tip = preferences.takeTip() else { return }
+        note = "Совет: " + tip.text
+    }
     @objc private func toggleSuggestions() { preferences.suggestionsEnabled = suggestionsSwitch.isOn; updateSuggestions(); render() }
     /// Suggestions for the word before the cursor; nothing is replaced unless the user taps one.
     private func updateSuggestions() {
@@ -588,16 +636,24 @@ final class KeyboardViewController: UIInputViewController, UIGestureRecognizerDe
         rewardBanner.isHidden = rewardTitle.text == nil || !preferences.rewardsEnabled || showingPanel
         status.isHidden = note.isEmpty || showingPanel || !rewardBanner.isHidden; status.text = note
         translate.setTitle(busy ? "Отменить" : "Перевести", for: .normal)
-        translate.accessibilityLabel = snapshot().isSelection ? "Перевести выделение" : "Перевести текущий абзац"
-        translate.isHidden = showingPanel; study.isHidden = translate.isHidden
+        let current = snapshot()
+        translate.accessibilityLabel = current.isSelection ? "Перевести выделение" : current.scope.accessibilityAction
+        translate.isHidden = showingPanel
+        let selectedTerm = showingPanel ? nil : VocabularyEntry.term(fromSelection: current.selected)
+        addWord.isHidden = selectedTerm == nil
+        addWord.accessibilityLabel = selectedTerm.map { "Сохранить «\($0)» в словарь" }
+        study.isHidden = translate.isHidden || selectedTerm != nil
         translate.isEnabled = busy || (!translate.isHidden && snapshot() != translatedSnapshot)
         translationControl.backgroundColor = .clear
         translationControl.layer.borderWidth = 0
-        for b in [translate, study] { b.backgroundColor = .clear; b.layer.borderWidth = 0; b.setTitleColor(EasyTalkTheme.ink, for: .normal); b.setTitleColor(EasyTalkTheme.secondary, for: .disabled); b.tintColor = EasyTalkTheme.ink }
+        for b in [translate, study, addWord] { b.backgroundColor = .clear; b.layer.borderWidth = 0; b.setTitleColor(EasyTalkTheme.ink, for: .normal); b.setTitleColor(EasyTalkTheme.secondary, for: .disabled); b.tintColor = EasyTalkTheme.ink }
         translate.backgroundColor = EasyTalkTheme.creamEnd; translate.layer.cornerRadius = 10; translate.layer.borderWidth = 1
         translate.layer.borderColor = EasyTalkTheme.border.resolvedColor(with: traitCollection).cgColor
-        study.layer.cornerRadius = 10; study.layer.borderWidth = 1
-        study.layer.borderColor = EasyTalkTheme.border.resolvedColor(with: traitCollection).cgColor
+        for b in [study, addWord] {
+            b.layer.cornerRadius = 10
+            b.layer.borderWidth = 1
+            b.layer.borderColor = EasyTalkTheme.border.resolvedColor(with: traitCollection).cgColor
+        }
         study.isEnabled = !store.lessons.isEmpty && !busy
         if showingStudy && studyHostSnapshot == nil { studyHostSnapshot = snapshot() }
         if !showingStudy { studyHostSnapshot = nil }
@@ -820,7 +876,7 @@ final class KeyboardViewController: UIInputViewController, UIGestureRecognizerDe
             guard let self, token == self.studyGeneration else { return }
             self.studyRequest = nil; self.studyBusy = false
             switch result {
-            case .success(let value): apply(value); self.note = ""
+            case .success(let value): self.note = ""; apply(value)
             case .failure(let error):
                 self.note = error == .incomplete ? "AI вернул неполный ответ. Попробуй ещё раз." : error.message.replacingOccurrences(of: "Перевод", with: "Запрос").replacingOccurrences(of: "перевод", with: "запрос")
             }; self.render()
@@ -831,6 +887,42 @@ final class KeyboardViewController: UIInputViewController, UIGestureRecognizerDe
         performStudyAction(.rephrase, source: lesson.response.corrected) { [weak self] value in
             guard case .variants(let variants) = value else { return }; self?.store.setVariants(variants, lesson: lesson.id); self?.expandedVariantLessons.insert(lesson.id)
         }
+    }
+    /// «В словарь» for a selected word or phrase. Saved at once; with AI connected the translation and
+    /// examples follow, without it the word waits for «Скопировать контекст» → «Вставить слова».
+    @objc private func addSelectionToDictionary() {
+        guard let term = VocabularyEntry.term(fromSelection: snapshot().selected) else { return }
+        #if !targetEnvironment(simulator)
+        guard hasFullAccess else {
+            note = "Чтобы сохранять слова, включи «Полный доступ» клавиатуры."
+            render()
+            return
+        }
+        #endif
+        store.reloadWords()
+        guard let id = store.saveUntranslated(term) else {
+            note = "«\(term)» уже в словаре."
+            render()
+            return
+        }
+        // Built-in idioms already come with a translation and examples.
+        if let saved = store.words.first(where: { $0.id == id }), !saved.needsTranslation {
+            note = "В словаре: \(saved.displayTerm) — \(saved.displayMeaning)."
+            render()
+            return
+        }
+        guard connection != nil else {
+            note = "«\(term)» в словаре без перевода. Его добавит любой ИИ: 📋 «Скопировать контекст», затем «Вставить слова»."
+            render()
+            return
+        }
+        performStudyAction(.dictionary, source: term) { [weak self] value in
+            guard let self, case .dictionary(let entry) = value else { return }
+            self.store.setDictionary(entry, word: id)
+            self.note = "В словаре: \(entry.headword) — \(entry.meanings.joined(separator: "; "))."
+        }
+        note = "«\(term)» в словаре. Ищу перевод…"
+        render()
     }
     @objc private func refineWord(_ sender: UIButton) {
         guard let id = sender.accessibilityIdentifier.flatMap(UUID.init(uuidString:)), let word = store.words.first(where: { $0.id == id }) else { return }
@@ -879,7 +971,7 @@ final class KeyboardViewController: UIInputViewController, UIGestureRecognizerDe
         renderDictionaryFilters()
         let entries = practice.dictionaryCards(words: store.words, filter: dictionaryFilter)
         if entries.isEmpty {
-            let text = dictionaryFilter == .learned ? "Выученные слова появятся здесь." : (dictionaryFilter == .inGame ? "Все твои слова уже выучены." : "Сохраняй слова ссылкой «В словарь» у правки.")
+            let text = dictionaryFilter == .learned ? "Выученные слова появятся здесь." : (dictionaryFilter == .inGame ? "Все твои слова уже выучены." : "Сохраняй слова ссылкой «В словарь» у правки или выдели слово в тексте и нажми «В словарь».")
             lessonContent.addArrangedSubview(label(text, size: 18)); return
         }
         for item in entries {
@@ -895,11 +987,20 @@ final class KeyboardViewController: UIInputViewController, UIGestureRecognizerDe
             reveal.accessibilityIdentifier = item.id
             let gap = UIView(); gap.setContentHuggingPriority(.defaultLow, for: .horizontal)
             let row = UIStackView(arrangedSubviews: [termLine, gap, reveal]); row.spacing = 5; row.alignment = .top
-            card.addArrangedSubview(row); card.addArrangedSubview(label(item.meaning, size: 17))
+            card.addArrangedSubview(row)
+            if item.meaning.isEmpty {
+                let missing = "Без перевода. Открой ⌄ → «Перевести с AI» или 📋 «Скопировать контекст» → «Вставить слова»."
+                let missingLabel = label(missing, size: 15)
+                missingLabel.textColor = EasyTalkTheme.secondary
+                card.addArrangedSubview(missingLabel)
+            } else {
+                card.addArrangedSubview(label(item.meaning, size: 17))
+            }
             if expandedCardID == item.id {
                 for example in item.examples { card.addArrangedSubview(exampleLabel(term: item.term, context: example)) }
                 if item.personal {
-                    let refine = link(studyBusy ? "Отменить запрос" : "Подробней о слове", action: #selector(refineWord(_:)))
+                    let refineTitle = item.meaning.isEmpty ? "Перевести с AI" : "Подробней о слове"
+                    let refine = link(studyBusy ? "Отменить запрос" : refineTitle, action: #selector(refineWord(_:)))
                     refine.accessibilityIdentifier = String(item.id.dropFirst("word.".count)); card.addArrangedSubview(refine)
                     let remove = link("Удалить из словаря", action: #selector(removeWord(_:)))
                     remove.accessibilityIdentifier = String(item.id.dropFirst("word.".count)); card.addArrangedSubview(remove)
@@ -1062,7 +1163,11 @@ final class KeyboardViewController: UIInputViewController, UIGestureRecognizerDe
     private func snapshot() -> InputSnapshot {
         if let previewSnapshot { return previewSnapshot() }
         let p = textDocumentProxy
-        return InputSnapshot(document: EasyTalkDocumentIdentifier(p) as UUID?, before: p.documentContextBeforeInput, after: p.documentContextAfterInput, selected: p.selectedText)
+        return InputSnapshot(document: EasyTalkDocumentIdentifier(p) as UUID?,
+                             before: p.documentContextBeforeInput,
+                             after: p.documentContextAfterInput,
+                             selected: p.selectedText,
+                             scope: preferences.translateScope)
     }
     /// Automatic history: a field emptied by the host app (not by our delete key) was sent.
     private func recordSentText() {
@@ -1131,9 +1236,14 @@ final class KeyboardViewController: UIInputViewController, UIGestureRecognizerDe
         guard hasFullAccess else { contextMessage.text = "Включи «Полный доступ» клавиатуры, чтобы копировать."; render(); return }
         let period = preferences.contextPeriod; history.reload()
         let entries = history.entries(in: period)
-        guard !entries.isEmpty else { contextMessage.text = "Нечего копировать: выбери период длиннее."; render(); return }
-        UIPasteboard.general.setItems([["public.utf8-plain-text": ContextExport.text(entries: entries, period: period)]], options: [.localOnly: true])
-        contextMessage.text = "Скопировано: \(entries.count). Вставь в чат любого ИИ."
+        store.reloadWords()
+        let untranslated = store.untranslatedTerms
+        guard !entries.isEmpty || !untranslated.isEmpty else { contextMessage.text = "Нечего копировать: выбери период длиннее."; render(); return }
+        let text = ContextExport.text(entries: entries, period: period, untranslated: untranslated)
+        UIPasteboard.general.setItems([["public.utf8-plain-text": text]], options: [.localOnly: true])
+        var copied = "Скопировано сообщений: \(entries.count)"
+        if !untranslated.isEmpty { copied += ", слов без перевода: \(min(untranslated.count, ContextExport.maxUntranslated))" }
+        contextMessage.text = copied + ". Вставь в чат любого ИИ."
         UIAccessibility.post(notification: .announcement, argument: contextMessage.text); render()
     }
     @objc private func pasteWords() {

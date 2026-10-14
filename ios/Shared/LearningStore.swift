@@ -33,6 +33,20 @@ public struct VocabularyEntry: Codable {
     public var displayTerm: String { lexical?.headword ?? term }
     public var displayMeaning: String { lexical?.meanings.joined(separator: "; ") ?? meaning }
     public var examples: [String] { lexical?.examples ?? [correctedContext].filter { !$0.isEmpty } }
+    /// Saved from a selection without AI: no translation yet. Kept out of the card game until one is added.
+    public var needsTranslation: Bool { displayMeaning.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+    /// «В словарь» for a selection: a word or short phrase on one line, up to 6 words and 60 characters.
+    /// Spaces and punctuation around it are dropped.
+    public static func term(fromSelection text: String?) -> String? {
+        guard let text else { return nil }
+        let edges = CharacterSet.whitespacesAndNewlines.union(.punctuationCharacters).union(.symbols)
+        let trimmed = text.trimmingCharacters(in: edges)
+        guard !trimmed.isEmpty, trimmed.count <= 60 else { return nil }
+        guard trimmed.contains(where: { $0.isLetter }), !trimmed.contains(where: { $0.isNewline }) else { return nil }
+        let words = trimmed.split(whereSeparator: { $0.isWhitespace })
+        guard words.count <= 6 else { return nil }
+        return words.joined(separator: " ")
+    }
     public init(id: UUID = UUID(), term: String, meaning: String, kind: String, originalContext: String, correctedContext: String, dictionary: LexicalEntry? = nil) {
         self.id = id; self.term = term; self.meaning = meaning; self.kind = kind
         self.originalContext = originalContext; self.correctedContext = correctedContext; self.dictionary = dictionary?.validated
@@ -88,7 +102,30 @@ public final class LearningStore {
         guard let index = lessons.firstIndex(where: { $0.id == id }) else { return }
         lessons[index].unread = false; persist()
     }
-    public func contains(_ term: String) -> Bool { words.contains { $0.displayTerm.lowercased() == term.lowercased() || $0.term.lowercased() == term.lowercased() } }
+    public func contains(_ term: String) -> Bool { index(of: term) != nil }
+    private func index(of term: String) -> Int? {
+        let wanted = term.lowercased()
+        return words.firstIndex { $0.displayTerm.lowercased() == wanted || $0.term.lowercased() == wanted }
+    }
+    /// «В словарь» for a selection: saved at once without a translation; AI or «Вставить слова» adds it later.
+    /// Returns the new word's id, or nil when the term is empty or already saved.
+    @discardableResult public func saveUntranslated(_ term: String) -> UUID? {
+        let clean = term.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !clean.isEmpty, !contains(clean) else { return nil }
+        let kind = clean.contains(" ") ? "phrase" : "word"
+        let entry = VocabularyEntry(term: clean, meaning: "", kind: kind, originalContext: "", correctedContext: "")
+        words.insert(entry, at: 0)
+        words = Array(words.prefix(Self.maxWords))
+        persist()
+        return entry.id
+    }
+    /// Saved words still waiting for a translation, newest first: «Скопировать контекст» asks the AI for them.
+    public var untranslatedTerms: [String] { words.filter { $0.needsTranslation }.map { $0.term } }
+    /// Whether «Вставить слова» would add this word or fill in its missing translation.
+    public func accepts(_ item: ImportedWord) -> Bool {
+        guard let index = index(of: item.term) else { return true }
+        return words[index].needsTranslation
+    }
     /// Adding a built-in idiom is an explicit user action, separate from analysis.
     public func saveEntry(_ entry: VocabularyEntry) {
         guard !contains(entry.term), !entry.term.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
@@ -121,17 +158,25 @@ public final class LearningStore {
         guard let entry = entry.validated, let index = words.firstIndex(where: { $0.id == id }) else { return }
         words[index].dictionary = entry; persist()
     }
-    /// Words from an external AI answer («Вставить слова»). Existing terms are skipped. Returns how many were added.
+    /// Words from an external AI answer («Вставить слова»). New terms are added; a saved word without a translation
+    /// gets one and keeps its id and place. Other existing terms are skipped. Returns how many were added or translated.
     @discardableResult public func importWords(_ items: [ImportedWord]) -> Int {
-        var added = 0
+        var changed = 0
         // Reversed, so the first word of the list ends up on top.
-        for item in items.reversed() where !contains(item.term) {
+        for item in items.reversed() {
+            if let index = index(of: item.term) {
+                guard words[index].needsTranslation else { continue }
+                words[index].meaning = item.meaning
+                if words[index].correctedContext.isEmpty { words[index].correctedContext = item.example }
+                changed += 1
+                continue
+            }
             words.insert(VocabularyEntry(term: item.term, meaning: item.meaning, kind: item.term.contains(" ") ? "phrase" : "word",
                 originalContext: "", correctedContext: item.example), at: 0)
-            added += 1
+            changed += 1
         }
-        if added > 0 { words = Array(words.prefix(Self.maxWords)); persist() }
-        return added
+        if changed > 0 { words = Array(words.prefix(Self.maxWords)); persist() }
+        return changed
     }
     /// The app and the keyboard both write the dictionary; re-read before showing or changing it.
     public func reloadWords() { words = Self.load(VocabularyEntry.self, key: "learning.words", defaults: defaults) }
