@@ -67,6 +67,7 @@ final class KeyboardViewController: UIInputViewController, UIGestureRecognizerDe
     private let rewardTitle = UILabel()
     private let celebration = CelebrationOverlay()
     private let rewardsEnabled = UISwitch(), secondSkillEnabled = UISwitch(), historySwitch = UISwitch(), hapticsSwitch = UISwitch(), suggestionsSwitch = UISwitch()
+    private let tipsSwitch = UISwitch()
     private var cursorPreferredX: Double?
     private var cursorDragging = false
     private var lastKeyWidth = 0
@@ -186,7 +187,8 @@ final class KeyboardViewController: UIInputViewController, UIGestureRecognizerDe
         historySwitch.addTarget(self, action: #selector(toggleHistory), for: .valueChanged)
         hapticsSwitch.addTarget(self, action: #selector(toggleHaptics), for: .valueChanged)
         suggestionsSwitch.addTarget(self, action: #selector(toggleSuggestions), for: .valueChanged)
-        for (title, control) in [("Поощрения", rewardsEnabled), ("Второй навык", secondSkillEnabled), ("История вводов", historySwitch), ("Вибрация клавиш", hapticsSwitch), ("Подсказки слов", suggestionsSwitch)] {
+        tipsSwitch.addTarget(self, action: #selector(toggleTips), for: .valueChanged)
+        for (title, control) in [("Поощрения", rewardsEnabled), ("Второй навык", secondSkillEnabled), ("История вводов", historySwitch), ("Вибрация клавиш", hapticsSwitch), ("Подсказки слов", suggestionsSwitch), ("Советы", tipsSwitch)] {
             control.onTintColor = EasyTalkTheme.gold; control.accessibilityLabel = title
             let row = UIStackView(arrangedSubviews: [label(title, size: 19, weight: .medium), control])
             row.alignment = .center; row.spacing = 12; fixedHeight(row, 44); settings.addArrangedSubview(row)
@@ -194,6 +196,10 @@ final class KeyboardViewController: UIInputViewController, UIGestureRecognizerDe
         settings.addArrangedSubview(label("Поощрения — поздравления и короткий салют за английский без ошибок. «Второй навык» — до 4 карточек за раз; открывается только по твоему желанию.", size: 16))
         settings.addArrangedSubview(label("История вводов — отправленные сообщения сохраняются только на этом iPhone, 90 дней, для «Скопировать контекст». Сообщение считается отправленным, когда поле очистилось не клавишей удаления.", size: 16))
         settings.addArrangedSubview(button("Очистить историю вводов", height: 36, action: #selector(clearInputHistory)))
+        let tipsHelp = "Подсказки слов — ряд над клавишами, появляется только когда есть что подсказать. "
+            + "Советы — короткая подсказка о клавиатуре при её появлении, не чаще раза в полчаса."
+        settings.addArrangedSubview(label(tipsHelp, size: 16))
+        settings.addArrangedSubview(button("Показать советы снова", height: 36, action: #selector(showTipsAgain)))
         symbolsEnabled.onTintColor = EasyTalkTheme.gold
         symbolsEnabled.addTarget(self, action: #selector(toggleSymbolRow), for: .valueChanged)
         symbolsEnabled.accessibilityLabel = "Ряд символов на основной клавиатуре"
@@ -294,6 +300,7 @@ final class KeyboardViewController: UIInputViewController, UIGestureRecognizerDe
         // The user's own words: suggested first and never treated as misspellings.
         knownWords = WordSuggestions.vocabulary(from: history.entries.map(\.text))
         updateSuggestions()
+        showNextTip()
         render()
     }
     override func viewWillDisappear(_ animated: Bool) {
@@ -520,6 +527,7 @@ final class KeyboardViewController: UIInputViewController, UIGestureRecognizerDe
         rewardsEnabled.isOn = preferences.rewardsEnabled; secondSkillEnabled.isOn = preferences.secondSkillEnabled
         historySwitch.isOn = preferences.historyEnabled; hapticsSwitch.isOn = preferences.hapticsEnabled
         suggestionsSwitch.isOn = preferences.suggestionsEnabled
+        tipsSwitch.isOn = preferences.tipsEnabled
         symbolsEnabled.isOn = preferences.symbolRowEnabled
         symbolsPreview.text = preferences.symbols.isEmpty ? "Нет выбранных знаков" : preferences.symbols.joined(separator: "   ")
         if symbolChoices.arrangedSubviews.isEmpty {
@@ -562,6 +570,19 @@ final class KeyboardViewController: UIInputViewController, UIGestureRecognizerDe
     }
     @objc private func resetSymbols() { preferences.resetSymbols(); settingsFeedback.isHidden = true; rebuildKeys(); render() }
     @objc private func toggleHaptics() { preferences.hapticsEnabled = hapticsSwitch.isOn }
+    @objc private func toggleTips() { preferences.tipsEnabled = tipsSwitch.isOn }
+    @objc private func showTipsAgain() {
+        preferences.resetTips()
+        tipsSwitch.isOn = true
+        settingsFeedback.text = "Советы начнутся заново при следующем появлении клавиатуры."
+        settingsFeedback.isHidden = false
+        render()
+    }
+    /// One tip in the status line when the keyboard appears; typing clears it. Not in the app's preview.
+    private func showNextTip() {
+        guard previewSnapshot == nil, note.isEmpty, !showingPanel, let tip = preferences.takeTip() else { return }
+        note = "Совет: " + tip.text
+    }
     @objc private func toggleSuggestions() { preferences.suggestionsEnabled = suggestionsSwitch.isOn; updateSuggestions(); render() }
     /// Suggestions for the word before the cursor; nothing is replaced unless the user taps one.
     private func updateSuggestions() {

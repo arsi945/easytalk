@@ -75,6 +75,31 @@ enum LearningTests {
         check(scopePreferences.translateScope == .message, "the whole message is translated by default")
         scopePreferences.translateScope = .sentence
         check(KeyboardPreferences(defaults: scopeDefaults).translateScope == .sentence, "the chosen scope is kept")
+        // Keyboard tips: one at a time, spaced out, each once; the suggestions tip only while the row is off.
+        let tipsSuite = "easytalk.tests.tips"
+        let tipsDefaults = UserDefaults(suiteName: tipsSuite)!
+        tipsDefaults.removePersistentDomain(forName: tipsSuite)
+        let tips = KeyboardPreferences(defaults: tipsDefaults)
+        let tipStart = Date(timeIntervalSince1970: 1_800_000_000)
+        check(Set(KeyboardTips.all.map(\.id)).count == KeyboardTips.all.count, "tip IDs are unique")
+        check(tips.takeTip(now: tipStart)?.id == "translate-message", "the first tip explains «Перевести»")
+        check(tips.takeTip(now: tipStart.addingTimeInterval(60)) == nil, "no second tip right after the first")
+        tips.suggestionsEnabled = true
+        let afterInterval = tipStart.addingTimeInterval(KeyboardTips.interval + 1)
+        check(tips.takeTip(now: afterInterval)?.id == "add-word", "the suggestions tip is skipped when the row is on")
+        var tipTime = afterInterval
+        var seenTips = 2
+        while tips.takeTip(now: tipTime.addingTimeInterval(KeyboardTips.interval + 1)) != nil {
+            tipTime = tipTime.addingTimeInterval(KeyboardTips.interval + 1)
+            seenTips += 1
+        }
+        check(seenTips == KeyboardTips.all.count - 1, "every other tip is shown once, then none")
+        tips.tipsEnabled = false
+        tips.resetTips()
+        check(tips.tipsEnabled && tips.takeTip(now: tipTime)?.id == "translate-message", "«Показать советы снова» starts over")
+        tips.tipsEnabled = false
+        check(tips.takeTip(now: tipTime.addingTimeInterval(1_000_000)) == nil, "tips can be turned off")
+        tipsDefaults.removePersistentDomain(forName: tipsSuite)
         let missing = InputSnapshot(document: uuid, before: nil, after: nil, selected: nil)
         check(!missing.canReplace, "missing context cannot translate")
         let detached = InputSnapshot(document: nil, before: source, after: "", selected: nil)
