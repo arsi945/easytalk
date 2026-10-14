@@ -519,6 +519,33 @@ enum LearningTests {
               "imported words keep list order, kind and example")
         check(importStore.importWords(imported) == 0, "importing the same answer twice adds nothing")
         check(LearningStore(defaults: UserDefaults(suiteName: importName)!).words.count == 3, "imported words persist")
+        // «В словарь» for a selection: saved without a translation, filled in by «Вставить слова».
+        check(VocabularyEntry.term(fromSelection: " «look forward to», ") == "look forward to"
+              && VocabularyEntry.term(fromSelection: "don't") == "don't"
+              && VocabularyEntry.term(fromSelection: "привет") == "привет", "selection trimmed of spaces and punctuation")
+        check(VocabularyEntry.term(fromSelection: "one two three four five six seven") == nil
+              && VocabularyEntry.term(fromSelection: "line\nbreak") == nil
+              && VocabularyEntry.term(fromSelection: "123 !") == nil
+              && VocabularyEntry.term(fromSelection: nil) == nil, "long, multi-line or letterless selections are not dictionary words")
+        let pendingID = importStore.saveUntranslated("negotiate")
+        check(pendingID != nil && importStore.words.first?.needsTranslation == true, "a word can be saved without a translation")
+        check(importStore.saveUntranslated("Negotiate") == nil && importStore.saveUntranslated("agree on") == nil, "a saved word is not saved twice")
+        check(importStore.untranslatedTerms == ["negotiate"], "untranslated words are listed for the context")
+        let gameProgress = StudyProgressStore(defaults: UserDefaults(suiteName: importName)!)
+        check(!gameProgress.candidates(words: importStore.words).contains { $0.term == "negotiate" }
+              && gameProgress.dictionaryCards(words: importStore.words).contains { $0.term == "negotiate" && $0.meaning.isEmpty },
+              "an untranslated word is in the dictionary but not in the card game")
+        let translation = ImportedWord(term: "negotiate", meaning: "вести переговоры", example: "We negotiated a deal.")
+        check(importStore.accepts(translation) && !importStore.accepts(imported[0]), "import accepts new and untranslated words only")
+        check(importStore.importWords([translation, imported[0]]) == 1, "import translates the waiting word and skips translated ones")
+        let filled = LearningStore(defaults: UserDefaults(suiteName: importName)!).words.first { $0.id == pendingID }
+        check(filled?.displayMeaning == "вести переговоры" && filled?.examples == ["We negotiated a deal."] && !filled!.needsTranslation,
+              "the translation is saved in place, with its example")
+        check(importStore.untranslatedTerms.isEmpty && importStore.words.count == 4, "nothing left to translate; no duplicate added")
+        let withPending = ContextExport.text(entries: [], period: .today, prompt: "TASK", untranslated: ["negotiate", "look up"])
+        check(withPending == "TASK\n\nМои сообщения за сегодня: 0\n\nСлова без перевода:\n- negotiate\n- look up\n",
+              "context lists untranslated words after the messages")
+        check(contextExportPrompt.contains("Слова без перевода"), "the prompt asks the AI to translate saved words")
         UserDefaults().removePersistentDomain(forName: importName)
 
         // Automatic history: retention, periods, repeated callbacks, translation details.

@@ -96,10 +96,13 @@ final class HistoryViewController: UIViewController {
 
     @objc private func copyContext() {
         let entries = history.entries(in: period)
-        guard !entries.isEmpty else { return }
-        let text = ContextExport.text(entries: entries, period: period)
+        let untranslated = LearningStore(defaults: SharedStorage.defaults()).untranslatedTerms
+        guard !entries.isEmpty || !untranslated.isEmpty else { return }
+        let text = ContextExport.text(entries: entries, period: period, untranslated: untranslated)
         UIPasteboard.general.setItems([["public.utf8-plain-text": text]], options: [.localOnly: true])
-        message.text = "Скопировано: \(entries.count). Открой чат любого ИИ и вставь."
+        var copied = "Скопировано сообщений: \(entries.count)"
+        if !untranslated.isEmpty { copied += ", слов без перевода: \(min(untranslated.count, ContextExport.maxUntranslated))" }
+        message.text = copied + ". Открой чат любого ИИ и вставь."
         UIAccessibility.post(notification: .announcement, argument: message.text)
     }
 
@@ -109,7 +112,7 @@ final class HistoryViewController: UIViewController {
             message.text = "В буфере нет списка слов. Скопируй ответ ИИ целиком — список начинается строкой \(WordImport.startMarker)."; return
         }
         let store = LearningStore(defaults: SharedStorage.defaults())
-        let fresh = words.filter { !store.contains($0.term) }
+        let fresh = words.filter { store.accepts($0) }
         guard !fresh.isEmpty else { message.text = "Все \(words.count) слов уже есть в словаре."; return }
         let preview = fresh.prefix(8).map { "\($0.term) — \($0.meaning)" }.joined(separator: "\n") + (fresh.count > 8 ? "\n…и ещё \(fresh.count - 8)" : "")
         let alert = UIAlertController(title: "Добавить в словарь: \(fresh.count)", message: preview, preferredStyle: .alert)

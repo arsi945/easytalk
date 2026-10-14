@@ -54,7 +54,9 @@ public final class StudyProgressStore {
         }
     }
     public func candidates(words: [VocabularyEntry], reviewLearned: Bool = false) -> [StudyCard] {
-        let all = pool(words: words).filter { reviewLearned || !isLearned($0.id) }
+        // A word saved without a translation has no back side yet.
+        let translated = pool(words: words).filter { !$0.meaning.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+        let all = translated.filter { reviewLearned || !isLearned($0.id) }
         // Personal words first. Each session contains distinct cards, never an endless feed.
         return all.filter { $0.personal }.shuffled() + all.filter { !$0.personal }.shuffled()
     }

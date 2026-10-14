@@ -8,8 +8,12 @@ public enum ContextExport {
     /// Large chats accept much more, but a shorter context keeps the answer focused.
     public static let maxCharacters = 60_000
 
+    /// At most this many untranslated dictionary words are sent, newest first.
+    public static let maxUntranslated = 30
+
     /// `prompt` replaces the default task from prompts/context_export.md (used by tests).
-    public static func text(entries: [HistoryEntry], period: HistoryPeriod, prompt: String? = nil) -> String {
+    /// `untranslated`: words saved without a translation; the prompt asks the AI to add them to the word block.
+    public static func text(entries: [HistoryEntry], period: HistoryPeriod, prompt: String? = nil, untranslated: [String] = []) -> String {
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "ru_RU"); formatter.dateFormat = "dd.MM HH:mm"
         let lines = entries.map { entry -> String in
@@ -30,7 +34,12 @@ public enum ContextExport {
         if omitted > 0 { header += " (ещё \(omitted) более старых не поместились)" }
         let numbered = kept.enumerated().map { "\($0.offset + 1). \($0.element)" }.joined(separator: "\n")
         let task = (prompt ?? contextExportPrompt).trimmingCharacters(in: .whitespacesAndNewlines)
-        return [task, header, numbered].joined(separator: "\n\n") + "\n"
+        var parts = [task, header, numbered].filter { !$0.isEmpty }
+        if !untranslated.isEmpty {
+            let list = untranslated.prefix(maxUntranslated).map { "- " + $0 }.joined(separator: "\n")
+            parts.append("Слова без перевода:\n" + list)
+        }
+        return parts.joined(separator: "\n\n") + "\n"
     }
 }
 
