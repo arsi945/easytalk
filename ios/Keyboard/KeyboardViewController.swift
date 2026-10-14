@@ -220,7 +220,7 @@ final class KeyboardViewController: UIInputViewController, UIGestureRecognizerDe
         settings.addArrangedSubview(label("Курсор", size: 20, weight: .semibold))
         settings.addArrangedSubview(label("Удерживай пробел и двигай палец влево, вправо, вверх или вниз.", size: 17))
         settings.addArrangedSubview(label("Подключение AI", size: 20, weight: .semibold))
-        settings.addArrangedSubview(label("Ключ AI вводится в приложении easytalk → «Настройки». Клавиатура видит его сразу, если включён «Полный доступ».", size: 16))
+        settings.addArrangedSubview(label("Ключ AI подключается в приложении easytalk: Настройки → Перевод через AI, пошагово. Клавиатура видит его сразу, если включён «Полный доступ».", size: 16))
         settings.addArrangedSubview(button("Отключить AI", height: 40, action: #selector(disconnectAI)))
         settings.addArrangedSubview(button("Завершить занятие и сбросить разборы", height: 36, action: #selector(clearHistory)))
         diagnostic.font = .systemFont(ofSize: 13); diagnostic.numberOfLines = 2; diagnostic.textColor = .secondaryLabel
@@ -300,6 +300,8 @@ final class KeyboardViewController: UIInputViewController, UIGestureRecognizerDe
         // The user's own words: suggested first and never treated as misspellings.
         knownWords = WordSuggestions.vocabulary(from: history.entries.map(\.text))
         updateSuggestions()
+        // The app's settings show that the keyboard is added and has Full Access.
+        if hasFullAccess { preferences.fullAccessSeen = Date() }
         showNextTip()
         render()
     }
