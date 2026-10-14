@@ -77,6 +77,10 @@ input_history = file("Shared/InputHistory.swift")
 context_export = file("Shared/ContextExport.swift")
 context_prompt = file("Shared/ContextExportPrompt.swift")
 history_screen = file("EasyTalk/HistoryViewController.swift")
+settings_screen = file("EasyTalk/SettingsViewController.swift")
+connection_screen = file("EasyTalk/AIConnectionViewController.swift")
+guide_screen = file("EasyTalk/GuideViewController.swift")
+settings_ui = file("EasyTalk/SettingsUI.swift")
 contracts = file("../Sources/EasyTalkCore/Contracts.swift")
 learning = file("../Sources/EasyTalkCore/Learning.swift")
 learning_store = file("Shared/LearningStore.swift")
@@ -108,7 +112,7 @@ keyboard_info = file("Keyboard/Info.plist", "text.plist.xml")
 app_product = obj("app-product", "PBXFileReference", explicitFileType="wrapper.application", path="EasyTalk.app", sourceTree="BUILT_PRODUCTS_DIR")
 keyboard_product = obj("keyboard-product", "PBXFileReference", explicitFileType="wrapper.app-extension", path="EasyTalkKeyboard.appex", sourceTree="BUILT_PRODUCTS_DIR")
 products = obj("products", "PBXGroup", children=[app_product, keyboard_product], name="Products", sourceTree="<group>")
-main = obj("main", "PBXGroup", children=[app_source, history_screen, keyboard_source, settings, shared_storage, input_history, context_export, context_prompt, contracts, learning, learning_store, cursor_navigation, typing_rules, word_suggestions, suggestion_bar, keyboard_preferences, study_practice, second_skill, idiom_catalog, study_content, study_action, study_prompt, speech, app_theme, document_bridge, document_bridge_header, bridging_header, analysis_service, keyboard_key, study_pager, analysis_prompt, app_info, app_entitlements, app_assets, keyboard_info, keyboard_entitlements, products], sourceTree="<group>")
+main = obj("main", "PBXGroup", children=[app_source, history_screen, settings_screen, connection_screen, guide_screen, settings_ui, keyboard_source, settings, shared_storage, input_history, context_export, context_prompt, contracts, learning, learning_store, cursor_navigation, typing_rules, word_suggestions, suggestion_bar, keyboard_preferences, study_practice, second_skill, idiom_catalog, study_content, study_action, study_prompt, speech, app_theme, document_bridge, document_bridge_header, bridging_header, analysis_service, keyboard_key, study_pager, analysis_prompt, app_info, app_entitlements, app_assets, keyboard_info, keyboard_entitlements, products], sourceTree="<group>")
 
 def configs(name, extra):
     ids = []
@@ -155,7 +159,7 @@ embed = obj("embed", "PBXCopyFilesBuildPhase", buildActionMask=2147483647, dstPa
 app = obj("app-target", "PBXNativeTarget",
     buildConfigurationList=configs("app", dict(common, INFOPLIST_FILE="EasyTalk/Info.plist",
         PRODUCT_BUNDLE_IDENTIFIER="com.easytalk.personal", CODE_SIGN_ENTITLEMENTS="EasyTalk/EasyTalk.entitlements", ASSETCATALOG_COMPILER_APPICON_NAME="AppIcon", LD_RUNPATH_SEARCH_PATHS=["$(inherited)", "@executable_path/Frameworks"])),
-    buildPhases=phases("app", [app_source, history_screen, keyboard_source] + shared_sources) + [embed], buildRules=[], dependencies=[dependency],
+    buildPhases=phases("app", [app_source, history_screen, settings_screen, connection_screen, guide_screen, settings_ui, keyboard_source] + shared_sources) + [embed], buildRules=[], dependencies=[dependency],
     name="EasyTalk", productName="EasyTalk", productReference=app_product, productType="com.apple.product-type.application")
 project = obj("project", "PBXProject", attributes=dict(LastUpgradeCheck="1600", BuildIndependentTargetsInParallel="YES"),
     buildConfigurationList=configs("project", {}), compatibilityVersion="Xcode 14.0", developmentRegion="en",

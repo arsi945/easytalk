@@ -232,6 +232,90 @@ public struct ConnectionSettings: Codable {
     }
 }
 
+/// The setup wizard: what each provider is, where its key is made and how to get it.
+extension AIProvider {
+    /// One line under the provider's name when choosing.
+    public var tagline: String {
+        switch self {
+        case .openai: return "ChatGPT. Аккаунт OpenAI, оплата по использованию."
+        case .anthropic: return "Claude. Claude Console, оплата отдельно от подписки Claude."
+        case .claudeAWS: return "Claude со счётом AWS: ключ и рабочее пространство."
+        case .bedrock: return "Claude в Amazon Bedrock: ключ API Bedrock."
+        case .qwen: return "Alibaba Cloud Model Studio: ключ и адрес своего региона."
+        case .deepseek: return "Недорогой. Аккаунт DeepSeek, оплата по использованию."
+        }
+    }
+    /// The page where the key is created: «Открыть сайт».
+    public var keyPageURL: URL {
+        switch self {
+        case .openai: return URL(string: "https://platform.openai.com/api-keys")!
+        case .anthropic: return URL(string: "https://console.anthropic.com/settings/keys")!
+        case .claudeAWS: return URL(string: "https://console.aws.amazon.com/")!
+        case .bedrock: return URL(string: "https://console.aws.amazon.com/bedrock/")!
+        case .qwen: return URL(string: "https://modelstudio.console.alibabacloud.com/")!
+        case .deepseek: return URL(string: "https://platform.deepseek.com/api_keys")!
+        }
+    }
+    /// How to get a key, for someone doing it for the first time.
+    public var keySteps: [String] {
+        switch self {
+        case .openai:
+            return ["Войди на platform.openai.com — подойдёт аккаунт ChatGPT.",
+                    "Пополни баланс: Settings → Billing. Без оплаты ключ не работает.",
+                    "API keys → Create new secret key. Скопируй ключ целиком."]
+        case .anthropic:
+            return ["Войди в Claude Console — подойдёт аккаунт Claude.",
+                    "Пополни баланс в Billing: оплата отдельно от подписки Claude Pro.",
+                    "API Keys → Create Key. Скопируй ключ sk-ant-… целиком."]
+        case .claudeAWS:
+            return ["В консоли AWS открой Claude Platform on AWS.",
+                    "Workspaces: скопируй ID рабочего пространства (wrkspc_…) и запомни его регион.",
+                    "API keys → Generate a key. Нужен постоянный ключ: временный перестаёт работать через 12 часов."]
+        case .bedrock:
+            return ["В консоли AWS открой Amazon Bedrock и выбери регион.",
+                    "Model access: включи доступ к моделям Claude.",
+                    "API keys → создай долгосрочный ключ и скопируй его."]
+        case .qwen:
+            return ["Войди в Alibaba Cloud Model Studio и выбери регион.",
+                    "API Keys → Create API Key. Скопируй ключ.",
+                    "Там же скопируй адрес API своего региона: он заканчивается на /compatible-mode/v1."]
+        case .deepseek:
+            return ["Войди на platform.deepseek.com.",
+                    "Пополни баланс в Top up.",
+                    "API keys → Create new API key. Скопируй ключ целиком."]
+        }
+    }
+    /// The AWS providers take a region instead of a whole address.
+    public var usesRegion: Bool { self == .claudeAWS || self == .bedrock }
+    public static let defaultRegion = "us-east-1"
+    /// The address for a region such as eu-central-1; nil for a mistyped region or another provider.
+    public func baseURL(region: String) -> String? {
+        let clean = region.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        guard usesRegion, clean.range(of: "^[a-z]{2}(-[a-z]+)+-[0-9]+$", options: .regularExpression) != nil else { return nil }
+        if self == .claudeAWS { return "https://aws-external-anthropic.\(clean).api.aws/v1" }
+        return "https://bedrock-mantle.\(clean).api.aws/anthropic/v1"
+    }
+    /// The region inside a saved address, for showing and editing it.
+    public func region(from baseURL: String) -> String? {
+        guard usesRegion, let host = URL(string: baseURL)?.host else { return nil }
+        let parts = host.split(separator: ".")
+        guard parts.count == 4, allows(host: host.lowercased()) else { return nil }
+        return String(parts[1])
+    }
+}
+
+extension ConnectionSettings {
+    /// What to fix before the connection can be checked, in plain words; nil when it is complete.
+    public var setupProblem: String? {
+        if token.isEmpty { return "Вставь ключ \(provider.title)." }
+        if provider.needsWorkspace && workspaceID.isEmpty { return "Вставь ID рабочего пространства (wrkspc_…): он в разделе Workspaces." }
+        if model.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { return "Выбери модель." }
+        guard url == nil else { return nil }
+        if provider.usesRegion { return "Проверь регион: он выглядит как us-east-1 или eu-central-1." }
+        return "Проверь адрес API: \(provider.addressHint)."
+    }
+}
+
 /// The models a key can use, from the provider's own list (GET …/models) — so the user picks instead of typing.
 public enum ModelCatalog {
     public static func request(config: ConnectionSettings) -> URLRequest? {

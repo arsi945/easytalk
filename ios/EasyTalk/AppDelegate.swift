@@ -111,6 +111,8 @@ final class TryViewController: UIViewController {
     private let importPrepared: Bool
     private let test = UITextView()
     private let voiceInfo = UILabel()
+    /// Shown until the AI is connected: the wizard is one tap away.
+    private let setupHint = SettingsRow(title: "Подключи AI для кнопки «Перевести»", detail: "Пошагово, за пару минут")
     init(importPrepared: Bool = false) { self.importPrepared = importPrepared; super.init(nibName: nil, bundle: nil) }
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
     override func viewDidLoad() {
@@ -119,7 +121,7 @@ final class TryViewController: UIViewController {
         view.backgroundColor = EasyTalkTheme.canvas
         navigationController?.navigationBar.tintColor = EasyTalkTheme.ink
         navigationItem.rightBarButtonItem = UIBarButtonItem(image: UIImage(systemName: "gearshape"), style: .plain, target: self, action: #selector(setup))
-        navigationItem.rightBarButtonItem?.accessibilityLabel = "Настройки подключения"
+        navigationItem.rightBarButtonItem?.accessibilityLabel = "Настройки"
         let scroll = UIScrollView(); scroll.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(scroll)
         NSLayoutConstraint.activate([
@@ -141,6 +143,10 @@ final class TryViewController: UIViewController {
         welcome.addArrangedSubview(textLabel("✨ Маленькие шаги. Свободный английский.", size: 26, weight: .bold))
         welcome.addArrangedSubview(textLabel("Пиши своими словами. easytalk поможет с переводом и сохранит полезное для учёбы.", size: 18))
         stack.addArrangedSubview(welcome)
+        let hintCard = SettingsUI.card()
+        setupHint.addTarget(self, action: #selector(openConnection), for: .touchUpInside)
+        hintCard.addArrangedSubview(setupHint)
+        stack.addArrangedSubview(hintCard)
         let voice = WarmCard(padding: 14)
         voice.addArrangedSubview(textLabel("🎙 Диктовка с клавиатуры", size: 20, weight: .medium))
         voiceInfo.font = .systemFont(ofSize: 16); voiceInfo.numberOfLines = 0; voiceInfo.textColor = EasyTalkTheme.ink
@@ -165,21 +171,28 @@ final class TryViewController: UIViewController {
         stack.addArrangedSubview(textLabel("Нажми на поле и выбери easytalk через 🌐.", size: 17))
         for (title, detail) in [
             ("1 · Пиши", "По-английски, как получается. Русские слова тоже можно: I want to купить coffee."),
-            ("2 · Переводи", "«Перевести ↓» заменит доступный абзац русским текстом. Для отдельного фрагмента сначала выдели его."),
-            ("3 · Забирай полезное", "Разбор откроется сразу. «В словарь →» сохраняет слово. В «Игре»: тап — переворот, свайп — следующая карточка. «Запомнил» переносит слово в «Выучил».")
+            ("2 · Переводи", "«Перевести» заменит всё сообщение русским текстом. Для отдельного фрагмента сначала выдели его."),
+            ("3 · Забирай полезное", "Разбор откроется сразу. «В словарь →» сохраняет слово; можно и выделить слово в тексте → «В словарь». В «Игре»: тап — переворот, свайп — следующая карточка.")
         ] {
             let card = WarmCard(padding: 14); card.addArrangedSubview(textLabel(title, size: 20, weight: .semibold))
             card.addArrangedSubview(textLabel(detail, size: 17)); stack.addArrangedSubview(card)
         }
-        stack.addArrangedSubview(textLabel("Первое подключение — через «Настройки». Клавиатуру добавь в настройках iPhone: Основные → Клавиатура → Клавиатуры → Новые клавиатуры.", size: 16))
-        stack.addArrangedSubview(textLabel("В ⚙ клавиатуры можно настроить символы, выключить поздравления и скрыть «Второй навык».", size: 16))
+        let guide = SettingsUI.secondaryButton("Как пользоваться клавиатурой →", self, #selector(openGuide))
+        stack.addArrangedSubview(guide)
+        stack.addArrangedSubview(textLabel("Клавиатуру добавь в настройках iPhone: easytalk → Клавиатуры → включи easytalk и «Полный доступ».", size: 16))
 
+    }
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        setupHint.superview?.isHidden = ConnectionStore.read() != nil
     }
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
         if importPrepared { test.becomeFirstResponder() }
     }
-    @objc private func setup() { navigationController?.pushViewController(SetupViewController(), animated: true) }
+    @objc private func setup() { navigationController?.pushViewController(SettingsViewController(), animated: true) }
+    @objc private func openConnection() { navigationController?.pushViewController(AIConnectionViewController(), animated: true) }
+    @objc private func openGuide() { navigationController?.pushViewController(GuideViewController(), animated: true) }
     @objc private func hideKeyboard() { view.endEditing(true) }
     @objc private func openHistory() { navigationController?.pushViewController(HistoryViewController(), animated: true) }
 
@@ -195,261 +208,6 @@ private func keyboardDoneBar(_ target: Any, _ action: Selector) -> UIToolbar {
 
 private func textLabel(_ text: String, size: CGFloat, weight: UIFont.Weight = .regular) -> UILabel {
     let l = UILabel(); l.text = text; l.numberOfLines = 0; l.font = .systemFont(ofSize: size, weight: weight); l.textColor = EasyTalkTheme.ink; return l
-}
-
-final class SetupViewController: UIViewController, UITextFieldDelegate {
-    private let scroll = UIScrollView()
-    private let prefill: ConnectionSettings?
-    init(prefill: ConnectionSettings? = nil) { self.prefill = prefill ?? ConnectionStore.read(); super.init(nibName: nil, bundle: nil) }
-    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
-    private let providers = AIProvider.allCases
-    /// Six providers do not fit a segmented control on a phone: a menu instead.
-    private let providerButton = UIButton(type: .system)
-    private var provider: AIProvider = .openai
-    private let workspace = UITextField()
-    private let providerHelp = UILabel()
-    private let model = UITextField()
-    private let endpoint = UITextField()
-    private let token = UITextField()
-    private let keyInfo = UILabel()
-    private let modelButton = UIButton(type: .system)
-    private var loadedModels: [String] = [], modelsTask: URLSessionDataTask?, modelsTimer: Timer?
-    private let message = UILabel()
-    private let preferences = KeyboardPreferences(defaults: SharedStorage.defaults())
-    private let speakerGender = UISegmentedControl(items: SpeakerGender.allCases.map { $0.title })
-    override func viewDidLoad() {
-        super.viewDidLoad(); title = "Настройки"; view.backgroundColor = EasyTalkTheme.canvas
-        scroll.translatesAutoresizingMaskIntoConstraints = false; view.addSubview(scroll)
-        // The visible area ends where any keyboard begins, so nothing stays hidden under it.
-        scroll.keyboardDismissMode = .interactive
-        NSLayoutConstraint.activate([
-            scroll.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
-            scroll.bottomAnchor.constraint(equalTo: view.keyboardLayoutGuide.topAnchor),
-            scroll.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            scroll.trailingAnchor.constraint(equalTo: view.trailingAnchor)
-        ])
-        let stack = UIStackView(); stack.axis = .vertical; stack.spacing = 16
-        stack.translatesAutoresizingMaskIntoConstraints = false; scroll.addSubview(stack)
-        NSLayoutConstraint.activate([
-            stack.topAnchor.constraint(equalTo: scroll.contentLayoutGuide.topAnchor, constant: 20),
-            stack.bottomAnchor.constraint(equalTo: scroll.contentLayoutGuide.bottomAnchor, constant: -24),
-            stack.leadingAnchor.constraint(equalTo: scroll.contentLayoutGuide.leadingAnchor, constant: 20),
-            stack.trailingAnchor.constraint(equalTo: scroll.contentLayoutGuide.trailingAnchor, constant: -20),
-            stack.widthAnchor.constraint(equalTo: scroll.frameLayoutGuide.widthAnchor, constant: -40)
-        ])
-        stack.addArrangedSubview(textLabel("Пол для перевода", size: 21))
-        if !preferences.hasSpeakerGender, let prefill { preferences.speakerGender = prefill.speakerGender }
-        speakerGender.selectedSegmentIndex = SpeakerGender.allCases.firstIndex(of: preferences.speakerGender) ?? 0
-        speakerGender.accessibilityLabel = "Пол говорящего для перевода"
-        speakerGender.heightAnchor.constraint(equalToConstant: 36).isActive = true
-        speakerGender.addTarget(self, action: #selector(changeSpeakerGender), for: .valueChanged)
-        stack.addArrangedSubview(speakerGender)
-        stack.addArrangedSubview(textLabel("Выбери форму для фраз от первого лица: «я сделал» или «я сделала». Настройка общая с клавиатурой, её можно изменить и в ⚙ клавиатуры.", size: 16))
-        stack.addArrangedSubview(textLabel("Подключение AI", size: 21))
-        stack.addArrangedSubview(textLabel("Нужен только для кнопки «Перевести». «Скопировать контекст» работает без ключа. Ключ свой: клавиатура обращается к выбранному провайдеру напрямую.", size: 17))
-        provider = prefill?.provider ?? .openai
-        providerButton.showsMenuAsPrimaryAction = true; providerButton.contentHorizontalAlignment = .leading
-        EasyTalkTheme.style(providerButton)
-        providerButton.titleLabel?.font = .systemFont(ofSize: 17, weight: .semibold)
-        providerButton.heightAnchor.constraint(equalToConstant: 44).isActive = true
-        updateProviderMenu()
-        stack.addArrangedSubview(providerButton)
-        providerHelp.numberOfLines = 0; providerHelp.font = .systemFont(ofSize: 15); providerHelp.textColor = EasyTalkTheme.secondary
-        stack.addArrangedSubview(providerHelp)
-        endpoint.keyboardType = .URL; endpoint.autocapitalizationType = .none
-        endpoint.autocorrectionType = .no; endpoint.borderStyle = .roundedRect
-        endpoint.accessibilityLabel = "Адрес API своего региона"
-        token.isSecureTextEntry = true
-        token.addTarget(self, action: #selector(keyChanged), for: .editingChanged)
-        modelButton.showsMenuAsPrimaryAction = true; modelButton.contentHorizontalAlignment = .leading
-        modelButton.titleLabel?.font = .systemFont(ofSize: 16, weight: .medium); modelButton.tintColor = EasyTalkTheme.link
-        modelButton.accessibilityLabel = "Выбрать модель из списка"
-        keyInfo.numberOfLines = 0; keyInfo.font = .systemFont(ofSize: 14)
-        token.autocorrectionType = .no; token.autocapitalizationType = .none; token.borderStyle = .roundedRect
-        model.borderStyle = .roundedRect; model.autocapitalizationType = .none; model.autocorrectionType = .no
-        model.accessibilityLabel = "Модель"
-        let tap = UITapGestureRecognizer(target: self, action: #selector(hideKeyboard)); tap.cancelsTouchesInView = false
-        view.addGestureRecognizer(tap)
-        workspace.placeholder = "ID рабочего пространства: wrkspc_…"; workspace.borderStyle = .roundedRect
-        workspace.autocapitalizationType = .none; workspace.autocorrectionType = .no; workspace.accessibilityLabel = "ID рабочего пространства"
-        for f in [endpoint, workspace, model, token] {
-            f.inputAccessoryView = keyboardDoneBar(self, #selector(hideKeyboard)); f.delegate = self; f.returnKeyType = .done
-            f.font = .systemFont(ofSize: 17); f.backgroundColor = EasyTalkTheme.paper; f.textColor = EasyTalkTheme.ink; let h = f.heightAnchor.constraint(equalToConstant: 44)
-            h.priority = .init(999); h.isActive = true; stack.addArrangedSubview(f)
-            if f === token { stack.addArrangedSubview(keyInfo) }
-            if f === model { stack.addArrangedSubview(modelButton) }
-        }
-        changeProvider()
-        if let prefill { token.text = prefill.token; model.text = prefill.model; endpoint.text = prefill.baseURL; workspace.text = prefill.workspaceID }
-        keyChanged(); loadModels()
-        let save = UIButton(type: .system); save.setTitle("Сохранить", for: .normal)
-        EasyTalkTheme.style(save, primary: true, blue: true)
-        save.titleLabel?.font = .systemFont(ofSize: 17, weight: .semibold)
-        save.heightAnchor.constraint(equalToConstant: 44).isActive = true
-        save.addTarget(self, action: #selector(saveSettings), for: .touchUpInside); stack.addArrangedSubview(save)
-        let check = UIButton(type: .system); check.setTitle("Проверить подключение", for: .normal)
-        EasyTalkTheme.style(check)
-        check.titleLabel?.font = .systemFont(ofSize: 17, weight: .medium)
-        check.heightAnchor.constraint(equalToConstant: 44).isActive = true
-        check.addTarget(self, action: #selector(checkConnection), for: .touchUpInside); stack.addArrangedSubview(check)
-        message.numberOfLines = 0; message.font = .systemFont(ofSize: 16); message.textColor = EasyTalkTheme.ink; stack.addArrangedSubview(message)
-        if prefill != nil { message.text = "Ключ сохранён. Клавиатура использует его автоматически." }
-        stack.addArrangedSubview(textLabel("В настройках клавиатуры iPhone включи «Полный доступ»: без него iOS не даёт клавиатуре ни сеть, ни общий ключ.", size: 17))
-        stack.addArrangedSubview(textLabel("Ключ хранится только на этом iPhone, в защищённом хранилище, общем для приложения и клавиатуры. В буфер обмена он не копируется. Текст отправляется только по кнопке «Перевести».", size: 15))
-    }
-    private func updateProviderMenu() {
-        providerButton.setTitle("Провайдер: \(provider.title) ▾", for: .normal)
-        providerButton.accessibilityLabel = "Провайдер AI: \(provider.title)"
-        providerButton.menu = UIMenu(title: "Провайдер AI", children: providers.map { item in
-            UIAction(title: item.title, state: item == provider ? .on : .off) { [weak self] _ in
-                guard let self, item != self.provider else { return }
-                self.provider = item; self.updateProviderMenu(); self.changeProvider()
-            }
-        })
-    }
-    private var missingFieldsMessage: String {
-        if provider.needsWorkspace { return "Введи ключ, ID рабочего пространства (wrkspc_…), модель и адрес вида \(provider.addressHint)." }
-        return provider.editableBaseURL ? "Введи ключ, модель и HTTPS-адрес вида \(provider.addressHint)." : "Введи ключ \(provider.title) и название модели."
-    }
-    /// A key belongs to one provider: switching clears it and restores that provider's defaults.
-    @objc private func changeProvider() {
-        let provider = self.provider
-        endpoint.isHidden = !provider.editableBaseURL; endpoint.text = provider.defaultBaseURL
-        workspace.isHidden = !provider.needsWorkspace; workspace.text = ""
-        endpoint.placeholder = provider.addressHint
-        model.text = provider.defaultModel; model.placeholder = "Модель \(provider.title)"
-        token.placeholder = provider.keyPlaceholder; token.text = ""
-        providerHelp.text = provider.keyHelp + " Модель можно заменить на любую доступную вашему ключу."
-        modelsTask?.cancel(); loadedModels = []; updateModelMenu(status: nil)
-        keyChanged()
-    }
-    @objc private func hideKeyboard() { view.endEditing(true) }
-    func textFieldShouldReturn(_ textField: UITextField) -> Bool { textField.resignFirstResponder(); return true }
-    /// Keep the edited field and the «Сохранить» button under it above the keyboard.
-    func textFieldDidBeginEditing(_ textField: UITextField) {
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
-            guard let self else { return }
-            let frame = textField.convert(textField.bounds, to: self.scroll)
-            self.scroll.scrollRectToVisible(CGRect(x: frame.minX, y: frame.minY - 16, width: frame.width, height: frame.height + 96), animated: true)
-        }
-    }
-    @objc private func changeSpeakerGender() {
-        guard SpeakerGender.allCases.indices.contains(speakerGender.selectedSegmentIndex) else { return }
-        preferences.speakerGender = SpeakerGender.allCases[speakerGender.selectedSegmentIndex]
-        if var saved = ConnectionStore.read() { saved.speakerGender = preferences.speakerGender; ConnectionStore.write(saved) }
-    }
-    private var formConfig: ConnectionSettings {
-        ConnectionSettings(provider: provider, apiKey: (token.text ?? "").trimmingCharacters(in: .whitespacesAndNewlines),
-            model: (model.text ?? "").trimmingCharacters(in: .whitespacesAndNewlines),
-            baseURL: (endpoint.text ?? "").trimmingCharacters(in: .whitespacesAndNewlines),
-            workspaceID: workspace.text ?? "", speakerGender: preferences.speakerGender)
-    }
-    /// The key stays hidden; a masked summary and a warning show whether it is the right, complete key.
-    @objc private func keyChanged() {
-        // A new key: reload the provider's model list shortly after typing or pasting stops.
-        modelsTimer?.invalidate()
-        modelsTimer = Timer.scheduledTimer(withTimeInterval: 0.8, repeats: false) { [weak self] _ in self?.loadModels() }
-        let key = ConnectionSettings.cleanKey(token.text ?? "")
-        guard !key.isEmpty else { keyInfo.text = "Ключ не введён."; keyInfo.textColor = EasyTalkTheme.secondary; return }
-        if let warning = provider.keyWarning(key) {
-            keyInfo.text = ConnectionSettings.keySummary(key) + "\n⚠️ " + warning; keyInfo.textColor = .systemOrange
-        } else {
-            keyInfo.text = ConnectionSettings.keySummary(key); keyInfo.textColor = EasyTalkTheme.secondary
-        }
-    }
-    /// The models this key can use, from the provider; the built-in list until then or on failure.
-    @objc private func loadModels() {
-        modelsTask?.cancel()
-        let config = formConfig
-        // A short-term key that is still valid works; any other warning means the key will be refused.
-        let stillValid = ConnectionSettings.temporaryKeyExpiry(config.token).map { $0 > Date() } ?? false
-        guard provider.keyWarning(config.token) == nil || stillValid, let request = ModelCatalog.request(config: config) else { updateModelMenu(status: nil); return }
-        updateModelMenu(status: "Загружаю список моделей…")
-        let provider = self.provider
-        modelsTask = AnalysisService.session.dataTask(with: request) { [weak self] data, response, _ in
-            let models = (response as? HTTPURLResponse)?.statusCode == 200 ? data.map { ModelCatalog.parse($0, provider: provider) } ?? [] : []
-            DispatchQueue.main.async {
-                guard let self, self.provider == provider else { return }
-                self.loadedModels = models
-                self.updateModelMenu(status: models.isEmpty ? "Список с сервера не получен — показаны рекомендуемые" : nil)
-            }
-        }
-        modelsTask?.resume()
-    }
-    private func updateModelMenu(status: String?) {
-        let fromServer = !loadedModels.isEmpty
-        let models = fromServer ? loadedModels : provider.suggestedModels
-        let title = status ?? (fromServer ? "Выбрать модель: \(models.count) доступно вашему ключу ▾" : "Выбрать из рекомендуемых моделей ▾")
-        modelButton.setTitle(title, for: .normal)
-        let current = (model.text ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
-        let choices = models.map { name in
-            UIAction(title: name, subtitle: name == provider.defaultModel ? "по умолчанию" : nil, state: name == current ? .on : .off) { [weak self] _ in
-                self?.model.text = name; self?.updateModelMenu(status: nil)
-            }
-        }
-        let reload = UIAction(title: "Обновить список с сервера", image: UIImage(systemName: "arrow.clockwise")) { [weak self] _ in self?.loadModels() }
-        modelButton.menu = UIMenu(title: fromServer ? "Модели \(provider.title) с сервера" : "Рекомендуемые модели \(provider.title)",
-                                  children: [UIMenu(options: .displayInline, children: choices), reload])
-    }
-    private var checkOperation: AnalysisOperation?
-    /// One request with an invented phrase (never the user's text): shows time and the provider's answer or reason.
-    @objc private func checkConnection() {
-        view.endEditing(true)
-        let config = formConfig
-        guard config.url != nil else {
-            message.text = missingFieldsMessage; return
-        }
-        checkOperation?.cancel(); message.text = "Проверяю на тестовой фразе «I want to купить coffee.»…"
-        let started = Date()
-        checkOperation = AnalysisOperation(source: "I want to купить coffee.", config: config) { [weak self] result, trace in
-            DispatchQueue.main.async {
-                guard let self else { return }
-                self.checkOperation = nil
-                let seconds = String(format: "%.1f", Date().timeIntervalSince(started))
-                switch result {
-                case .success(let analysis):
-                    self.message.text = "Работает: \(config.provider.title) · \(config.model) · \(seconds) с.\nПеревод: «\(analysis.translated)». Не забудь «Сохранить»."
-                case .failure(let failure):
-                    self.message.text = "Не работает (\(failure.code), \(seconds) с). " + failure.message(details: trace.response)
-                }
-                UIAccessibility.post(notification: .announcement, argument: self.message.text)
-            }
-        }
-    }
-    @objc private func saveSettings() {
-        let config = formConfig
-        guard config.url != nil else {
-            message.text = missingFieldsMessage; return
-        }
-        guard ConnectionStore.write(config) else {
-            message.text = "Не удалось сохранить подключение. Ключ остался в поле."; return
-        }
-        message.text = "Ключ сохранён. Клавиатура использует его автоматически."; view.endEditing(true)
-    }
-    #if targetEnvironment(simulator)
-    func runConnectionRegression() {
-        ConnectionStore.isolatedPreview = true
-        ConnectionStore.previewConnection = nil
-        let previousGender = preferences.hasSpeakerGender ? preferences.speakerGender : nil
-        defer {
-            if let previousGender { preferences.speakerGender = previousGender }
-            ConnectionStore.previewConnection = nil; ConnectionStore.isolatedPreview = false
-        }
-        loadViewIfNeeded(); let expected = token.text
-        speakerGender.selectedSegmentIndex = 2; changeSpeakerGender()
-        saveSettings(); let first = ConnectionStore.read()
-        saveSettings(); let repeated = ConnectionStore.read()
-        precondition(first?.token == expected && repeated?.token == expected, "Saving twice keeps the same key")
-        precondition(repeated?.speakerGender == .female, "Gender is saved with the connection")
-        precondition(token.text == expected && token.isSecureTextEntry, "Save must keep the masked key for retry")
-        let reopened = SetupViewController(); reopened.loadViewIfNeeded()
-        precondition(reopened.token.text == expected, "Reopening settings must restore the saved key")
-        precondition(reopened.speakerGender.selectedSegmentIndex == 2, "Gender must persist")
-        let path = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0].appendingPathComponent("connection-retry-check.json")
-        try! Data("{\"result\":\"passed\",\"repeated_save\":true,\"reopen\":true,\"isolated_credentials\":true}".utf8).write(to: path)
-        print("CONNECTION RETRY REGRESSION PASSED")
-    }
-    #endif
 }
 
 #if targetEnvironment(simulator)
@@ -502,7 +260,7 @@ final class KeyboardPreviewController: UIViewController {
                 self.keyboard.runPreviewRegression()
                 precondition(self.output.text == "Я хочу купить кофе")
                 precondition(self.insertionCount == 1, "Repeated insert must not duplicate the message")
-                SetupViewController(prefill: ConnectionSettings(apiKey: "test-only-key")).runConnectionRegression()
+                AIConnectionViewController.runConnectionRegression()
                 self.keyboard.runMechanicsRegression()
                 DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
                     self.keyboard.runDesignRegression(); self.keyboard.runCardGestureRegression()

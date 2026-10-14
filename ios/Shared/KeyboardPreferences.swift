@@ -101,6 +101,11 @@ public final class KeyboardPreferences {
     }
     public func resetSymbols() { symbols = Self.defaultSymbols }
 
+    /// Set by the keyboard each time it opens with Full Access, so the app can tell the keyboard is ready.
+    public var fullAccessSeen: Date? {
+        get { defaults.object(forKey: "keyboard.fullAccessSeen") as? Date }
+        set { defaults.set(newValue, forKey: "keyboard.fullAccessSeen") }
+    }
     /// One tip at a time when the keyboard appears. On by default.
     public var tipsEnabled: Bool {
         get { defaults.object(forKey: "keyboard.tips") == nil ? true : defaults.bool(forKey: "keyboard.tips") }

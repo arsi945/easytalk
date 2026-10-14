@@ -75,6 +75,28 @@ enum LearningTests {
         check(scopePreferences.translateScope == .message, "the whole message is translated by default")
         scopePreferences.translateScope = .sentence
         check(KeyboardPreferences(defaults: scopeDefaults).translateScope == .sentence, "the chosen scope is kept")
+        // AI setup wizard: every provider explains itself and where its key is made.
+        for provider in AIProvider.allCases {
+            check(!provider.tagline.isEmpty && provider.keySteps.count >= 3 && provider.keyPageURL.scheme == "https",
+                  "\(provider.title): tagline, key steps and an https key page")
+        }
+        check(AIProvider.claudeAWS.baseURL(region: " EU-Central-1 ") == "https://aws-external-anthropic.eu-central-1.api.aws/v1"
+              && AIProvider.bedrock.baseURL(region: "us-west-2") == "https://bedrock-mantle.us-west-2.api.aws/anthropic/v1",
+              "a region builds the AWS address")
+        check(AIProvider.bedrock.baseURL(region: "evil.com/x") == nil && AIProvider.claudeAWS.baseURL(region: "") == nil
+              && AIProvider.openai.baseURL(region: "us-east-1") == nil, "a mistyped region or another provider gives no address")
+        check(AIProvider.claudeAWS.region(from: AIProvider.claudeAWS.defaultBaseURL) == "us-east-1"
+              && AIProvider.bedrock.region(from: "https://bedrock-mantle.eu-west-1.api.aws/anthropic/v1") == "eu-west-1"
+              && AIProvider.qwen.region(from: AIProvider.qwen.defaultBaseURL) == nil, "the region is read back from a saved address")
+        check(ConnectionSettings(provider: .openai, apiKey: "").setupProblem == "Вставь ключ OpenAI.", "an empty key is named first")
+        check(ConnectionSettings(provider: .claudeAWS, apiKey: "key").setupProblem?.contains("wrkspc_") == true, "Claude AWS asks for the workspace")
+        check(ConnectionSettings(provider: .bedrock, apiKey: "key", baseURL: "").setupProblem?.contains("регион") == true,
+              "a broken AWS address asks for the region")
+        check(ConnectionSettings(provider: .qwen, apiKey: "key", baseURL: "http://example.com").setupProblem?.contains("адрес") == true,
+              "a wrong Qwen address is reported")
+        check(ConnectionSettings(provider: .deepseek, apiKey: "key").setupProblem == nil
+              && ConnectionSettings(provider: .claudeAWS, apiKey: "key", workspaceID: "wrkspc_1").setupProblem == nil,
+              "a complete connection has no problem")
         // Keyboard tips: one at a time, spaced out, each once; the suggestions tip only while the row is off.
         let tipsSuite = "easytalk.tests.tips"
         let tipsDefaults = UserDefaults(suiteName: tipsSuite)!
