@@ -42,6 +42,11 @@ public final class KeyboardPreferences {
         get { defaults.bool(forKey: "keyboard.suggestions") }
         set { defaults.set(newValue, forKey: "keyboard.suggestions") }
     }
+    /// What «Перевести» takes without a selection. The whole message by default: that is what people send.
+    public var translateScope: TranslateScope {
+        get { TranslateScope(rawValue: defaults.string(forKey: "keyboard.translateScope") ?? "") ?? .message }
+        set { defaults.set(newValue.rawValue, forKey: "keyboard.translateScope") }
+    }
     /// Light vibration on every key press (needs Full Access). On by default.
     public var hapticsEnabled: Bool {
         get { defaults.object(forKey: "keyboard.haptics") == nil ? true : defaults.bool(forKey: "keyboard.haptics") }

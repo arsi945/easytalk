@@ -77,6 +77,7 @@ final class KeyboardViewController: UIInputViewController, UIGestureRecognizerDe
     private let root = UIStackView()
     private let panelTitle = UILabel()
     private let speakerGender = UISegmentedControl(items: SpeakerGender.allCases.map { $0.title })
+    private let translateScope = UISegmentedControl(items: TranslateScope.allCases.map { $0.title })
     private let translate = UIButton(type: .system), study = UIButton(type: .system)
     private let globeSwitch = UIButton(type: .system)
     private let status = UILabel()
@@ -163,6 +164,14 @@ final class KeyboardViewController: UIInputViewController, UIGestureRecognizerDe
         speakerGender.accessibilityLabel = "Пол говорящего для перевода"
         fixedHeight(speakerGender, 36); settings.addArrangedSubview(speakerGender)
         settings.addArrangedSubview(label("Для фраз от твоего лица: «я сделал» или «я сделала». Других людей и цитаты эта настройка не меняет.", size: 16))
+        settings.addArrangedSubview(label("Что переводить", size: 19, weight: .medium))
+        translateScope.addTarget(self, action: #selector(changeTranslateScope), for: .valueChanged)
+        translateScope.accessibilityLabel = "Что переводить кнопкой «Перевести»"
+        fixedHeight(translateScope, 36)
+        settings.addArrangedSubview(translateScope)
+        let scopeHelp = "Без выделения «Перевести» берёт всё сообщение, абзац или предложение у курсора. "
+            + "Выделенный текст всегда переводится как есть."
+        settings.addArrangedSubview(label(scopeHelp, size: 16))
         rewardsEnabled.addTarget(self, action: #selector(toggleRewards), for: .valueChanged)
         secondSkillEnabled.addTarget(self, action: #selector(toggleSecondSkill), for: .valueChanged)
         historySwitch.addTarget(self, action: #selector(toggleHistory), for: .valueChanged)
@@ -189,8 +198,10 @@ final class KeyboardViewController: UIInputViewController, UIGestureRecognizerDe
         settingsFeedback.font = .systemFont(ofSize: 16); settingsFeedback.numberOfLines = 0; settingsFeedback.textColor = .systemOrange
         settingsFeedback.isHidden = true; settings.addArrangedSubview(settingsFeedback)
         settings.addArrangedSubview(button("Вернуть стандартные знаки", height: 40, action: #selector(resetSymbols)))
-        settings.addArrangedSubview(label("Что переводится", size: 20, weight: .semibold))
-        settings.addArrangedSubview(label("Выделенный текст или доступный абзац перед курсором. Последний набор отдельно не отслеживается. Вся заметка или файл автоматически не отправляется.", size: 17))
+        settings.addArrangedSubview(label("Что отправляется в AI", size: 20, weight: .semibold))
+        let sentText = "Только текст, который iOS показывает клавиатуре в этом поле: выделение или сообщение у курсора. "
+            + "В очень длинной заметке это может быть лишь часть рядом с курсором."
+        settings.addArrangedSubview(label(sentText, size: 17))
         settings.addArrangedSubview(label("Курсор", size: 20, weight: .semibold))
         settings.addArrangedSubview(label("Удерживай пробел и двигай палец влево, вправо, вверх или вниз.", size: 17))
         settings.addArrangedSubview(label("Подключение AI", size: 20, weight: .semibold))
@@ -496,6 +507,7 @@ final class KeyboardViewController: UIInputViewController, UIGestureRecognizerDe
     }
     private func renderSettings() {
         speakerGender.selectedSegmentIndex = SpeakerGender.allCases.firstIndex(of: preferences.speakerGender) ?? 0
+        translateScope.selectedSegmentIndex = TranslateScope.allCases.firstIndex(of: preferences.translateScope) ?? 0
         rewardsEnabled.isOn = preferences.rewardsEnabled; secondSkillEnabled.isOn = preferences.secondSkillEnabled
         historySwitch.isOn = preferences.historyEnabled; hapticsSwitch.isOn = preferences.hapticsEnabled
         suggestionsSwitch.isOn = preferences.suggestionsEnabled
@@ -526,6 +538,12 @@ final class KeyboardViewController: UIInputViewController, UIGestureRecognizerDe
         guard SpeakerGender.allCases.indices.contains(speakerGender.selectedSegmentIndex) else { return }
         preferences.speakerGender = SpeakerGender.allCases[speakerGender.selectedSegmentIndex]
         cancelRequest(); render()
+    }
+    @objc private func changeTranslateScope() {
+        let index = translateScope.selectedSegmentIndex
+        guard TranslateScope.allCases.indices.contains(index) else { return }
+        preferences.translateScope = TranslateScope.allCases[index]
+        render()
     }
     @objc private func selectSymbol(_ sender: UIButton) {
         guard let value = sender.accessibilityIdentifier else { return }
@@ -588,7 +606,8 @@ final class KeyboardViewController: UIInputViewController, UIGestureRecognizerDe
         rewardBanner.isHidden = rewardTitle.text == nil || !preferences.rewardsEnabled || showingPanel
         status.isHidden = note.isEmpty || showingPanel || !rewardBanner.isHidden; status.text = note
         translate.setTitle(busy ? "Отменить" : "Перевести", for: .normal)
-        translate.accessibilityLabel = snapshot().isSelection ? "Перевести выделение" : "Перевести текущий абзац"
+        let current = snapshot()
+        translate.accessibilityLabel = current.isSelection ? "Перевести выделение" : current.scope.accessibilityAction
         translate.isHidden = showingPanel; study.isHidden = translate.isHidden
         translate.isEnabled = busy || (!translate.isHidden && snapshot() != translatedSnapshot)
         translationControl.backgroundColor = .clear
@@ -1062,7 +1081,11 @@ final class KeyboardViewController: UIInputViewController, UIGestureRecognizerDe
     private func snapshot() -> InputSnapshot {
         if let previewSnapshot { return previewSnapshot() }
         let p = textDocumentProxy
-        return InputSnapshot(document: EasyTalkDocumentIdentifier(p) as UUID?, before: p.documentContextBeforeInput, after: p.documentContextAfterInput, selected: p.selectedText)
+        return InputSnapshot(document: EasyTalkDocumentIdentifier(p) as UUID?,
+                             before: p.documentContextBeforeInput,
+                             after: p.documentContextAfterInput,
+                             selected: p.selectedText,
+                             scope: preferences.translateScope)
     }
     /// Automatic history: a field emptied by the host app (not by our delete key) was sent.
     private func recordSentText() {

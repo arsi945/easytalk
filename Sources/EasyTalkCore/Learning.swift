@@ -191,19 +191,54 @@ public struct LearningResponse: Codable, Equatable {
     }
 }
 
+/// What «Перевести» takes when nothing is selected. The whole message by default (author's decision).
+public enum TranslateScope: String, CaseIterable, Codable {
+    case message, paragraph, sentence
+
+    public var title: String {
+        switch self {
+        case .message: return "Сообщение"
+        case .paragraph: return "Абзац"
+        case .sentence: return "Предложение"
+        }
+    }
+    public var accessibilityAction: String {
+        switch self {
+        case .message: return "Перевести всё сообщение"
+        case .paragraph: return "Перевести текущий абзац"
+        case .sentence: return "Перевести текущее предложение"
+        }
+    }
+}
+
 /// Immutable snapshot of the accessible field. No cursor movement is needed to replace it.
 struct InputSnapshot: Equatable {
     var document: UUID?
     var before: String?
     var after: String?
     var selected: String?
+    var scope: TranslateScope = .paragraph
 
-    /// Current paragraph: the selection, or the line around the cursor (text on both sides of it).
+    /// The text to translate: the selection, else the message, paragraph or sentence around the cursor.
     var source: String? {
         guard document != nil else { return nil }
         if let selected, !selected.isEmpty { return selected }
         guard before != nil || after != nil else { return nil }
-        return leadingLine + trailingLine
+        return leadingPart + trailingPart
+    }
+    private var leadingPart: String {
+        switch scope {
+        case .message: return before ?? ""
+        case .paragraph: return leadingLine
+        case .sentence: return leadingSentence
+        }
+    }
+    private var trailingPart: String {
+        switch scope {
+        case .message: return after ?? ""
+        case .paragraph: return trailingLine
+        case .sentence: return trailingSentence
+        }
     }
     private var leadingLine: String {
         String(before?.split(omittingEmptySubsequences: false, whereSeparator: { $0.isNewline }).last ?? "")
@@ -211,11 +246,37 @@ struct InputSnapshot: Equatable {
     private var trailingLine: String {
         String(after?.split(omittingEmptySubsequences: false, whereSeparator: { $0.isNewline }).first ?? "")
     }
-    /// Characters of the paragraph after the cursor.
-    var trailingCount: Int { isSelection ? 0 : trailingLine.count }
+    static let sentenceEnds: Set<Character> = [".", "!", "?", "…"]
+    /// From the end of the previous sentence (an end mark followed by a space) or line; the spaces stay in the field.
+    private var leadingSentence: String {
+        let line = Array(leadingLine)
+        var start = 0
+        var index = line.count - 1
+        while index > 0 {
+            let endsSentence = line[index].isWhitespace && Self.sentenceEnds.contains(line[index - 1])
+            if endsSentence {
+                start = index
+                break
+            }
+            index -= 1
+        }
+        let sentence = String(line[start...])
+        return String(sentence.drop { $0.isWhitespace })
+    }
+    /// Up to and including this sentence's end mark, or to the end of the line.
+    private var trailingSentence: String {
+        let line = trailingLine
+        guard let end = line.firstIndex(where: { Self.sentenceEnds.contains($0) }) else { return line }
+        var stop = line.index(after: end)
+        // «?!» or «...» belong to the same sentence.
+        while stop < line.endIndex, Self.sentenceEnds.contains(line[stop]) { stop = line.index(after: stop) }
+        return String(line[..<stop])
+    }
+    /// Characters of the chosen text after the cursor.
+    var trailingCount: Int { isSelection ? 0 : trailingPart.count }
     /// The same text in UTF-16 units: what adjustTextPosition(byCharacterOffset:) moves by, as in cursor
-    /// navigation. Counting characters stops short of the paragraph end after an emoji or accent.
-    var trailingUTF16: Int { isSelection ? 0 : trailingLine.utf16.count }
+    /// navigation. Counting characters stops short of the end after an emoji or accent.
+    var trailingUTF16: Int { isSelection ? 0 : trailingPart.utf16.count }
     var isSelection: Bool { selected?.isEmpty == false }
     var canReplace: Bool { source?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false }
 }

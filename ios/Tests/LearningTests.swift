@@ -55,6 +55,26 @@ enum LearningTests {
         let emojiAfter = InputSnapshot(document: UUID(), before: "I want ", after: "coffee 😀☕️ now\nNext", selected: nil)
         check(emojiAfter.trailingCount == 13 && emojiAfter.trailingUTF16 == 15 && emojiAfter.source == "I want coffee 😀☕️ now",
               "the caret moves to the paragraph end in UTF-16 units, past emoji")
+        // «Перевести» scope: the whole message by default, or the paragraph or sentence around the cursor.
+        let message = InputSnapshot(document: uuid, before: "Hi Max.\nI want", after: " coffee. And tea?\nBye", selected: nil, scope: .message)
+        check(message.source == "Hi Max.\nI want coffee. And tea?\nBye" && message.trailingUTF16 == 21, "message scope takes the whole field")
+        var sentence = message
+        sentence.scope = .sentence
+        check(sentence.source == "I want coffee." && sentence.trailingUTF16 == 8, "sentence scope stops at the line and the end mark")
+        let secondSentence = InputSnapshot(document: uuid, before: "Hi. How are", after: " you?! Fine", selected: nil, scope: .sentence)
+        check(secondSentence.source == "How are you?!" && secondSentence.trailingCount == 6, "previous sentence left in place; ?! kept together")
+        let noEnd = InputSnapshot(document: uuid, before: "v1.2 is out", after: "", selected: nil, scope: .sentence)
+        check(noEnd.source == "v1.2 is out", "a dot without a space does not split a sentence")
+        var selectedMessage = message
+        selectedMessage.selected = "coffee"
+        check(selectedMessage.source == "coffee" && selectedMessage.trailingUTF16 == 0, "a selection is translated as is in any scope")
+        let scopeSuite = "easytalk.tests.scope"
+        let scopeDefaults = UserDefaults(suiteName: scopeSuite)!
+        scopeDefaults.removePersistentDomain(forName: scopeSuite)
+        let scopePreferences = KeyboardPreferences(defaults: scopeDefaults)
+        check(scopePreferences.translateScope == .message, "the whole message is translated by default")
+        scopePreferences.translateScope = .sentence
+        check(KeyboardPreferences(defaults: scopeDefaults).translateScope == .sentence, "the chosen scope is kept")
         let missing = InputSnapshot(document: uuid, before: nil, after: nil, selected: nil)
         check(!missing.canReplace, "missing context cannot translate")
         let detached = InputSnapshot(document: nil, before: source, after: "", selected: nil)
