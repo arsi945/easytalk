@@ -79,7 +79,12 @@ final class HistoryViewController: UIViewController {
         preferences.contextPeriod = period
         let entries = history.entries(in: period)
         summary.text = entries.isEmpty ? "За этот период сообщений нет." : "Будет скопировано: \(entries.count) — \(period.phrase)."
-        copyButton.isEnabled = !entries.isEmpty; copyButton.alpha = entries.isEmpty ? 0.5 : 1
+        // Words saved without a translation are worth copying even without messages.
+        let untranslated = LearningStore(defaults: SharedStorage.defaults()).untranslatedTerms.count
+        if untranslated > 0 { summary.text! += " Слов без перевода: \(min(untranslated, ContextExport.maxUntranslated))." }
+        let canCopy = !entries.isEmpty || untranslated > 0
+        copyButton.isEnabled = canCopy
+        copyButton.alpha = canCopy ? 1 : 0.5
         list.arrangedSubviews.forEach { $0.removeFromSuperview() }
         let formatter = DateFormatter(); formatter.locale = Locale(identifier: "ru_RU"); formatter.dateFormat = "d MMM, HH:mm"
         // Newest first on screen; the copied text keeps the order of writing.
