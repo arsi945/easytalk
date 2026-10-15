@@ -55,6 +55,50 @@ enum LearningTests {
         let emojiAfter = InputSnapshot(document: UUID(), before: "I want ", after: "coffee 😀☕️ now\nNext", selected: nil)
         check(emojiAfter.trailingCount == 13 && emojiAfter.trailingUTF16 == 15 && emojiAfter.source == "I want coffee 😀☕️ now",
               "the caret moves to the paragraph end in UTF-16 units, past emoji")
+        // Whole field through a proxy that shows only pieces, as Telegram does: up to a sentence or a comma.
+        func readAll(_ field: PieceField) -> (before: String, after: String)? {
+            var reader = DocumentReader()
+            while true {
+                let view = field.read()
+                switch reader.read(before: view.before, after: view.after) {
+                case .move(let offset): field.move(offset)
+                case .wait: continue
+                case .done(let before, let after, let restore):
+                    field.move(restore)
+                    return (before, after)
+                case .failed(let restore):
+                    field.move(restore)
+                    return nil
+                }
+            }
+        }
+        let telegram = "Hello my friend! R u still with us or already happy, так сказать. Tipikon dont know 😀 about your plans and results."
+        let atEnd = PieceField(telegram, caret: telegram.utf16.count)
+        check(atEnd.read().before != telegram, "the fake field shows only a piece, like the real one")
+        let wholeAtEnd = readAll(atEnd)
+        check(wholeAtEnd?.before == telegram && wholeAtEnd?.after == "" && atEnd.caret == telegram.utf16.count,
+              "the whole message is read and the caret returns to the end")
+        let middleCaret = "Hello my friend! R u still with us or already happy, так сказать. ".utf16.count
+        let lagging = PieceField(telegram, caret: middleCaret)
+        lagging.lagging = true
+        let wholeFromMiddle = readAll(lagging)
+        check(wholeFromMiddle.map { $0.before + $0.after } == telegram && lagging.caret == middleCaret
+              && wholeFromMiddle?.after.hasPrefix("Tipikon") == true, "a slow proxy and a caret in the middle")
+        let lines = "-Выучил новый фразеологизм: so to speak.\n\n-if digital keyboard mode is on, you can turn off it only by pushing «123»."
+        let multiline = PieceField(lines, caret: lines.utf16.count - 5)
+        let wholeLines = readAll(multiline)
+        check(wholeLines.map { $0.before + $0.after } == lines && multiline.caret == lines.utf16.count - 5, "several lines and paragraphs")
+        let empty = PieceField("", caret: 0)
+        check(readAll(empty).map { $0.before + $0.after } == "", "an empty field")
+        let huge = String(repeating: "Long text, again. ", count: 800)
+        let hugeField = PieceField(huge, caret: 100)
+        check(readAll(hugeField) == nil && hugeField.caret == 100, "too long: gives up and puts the caret back")
+        let frozen = PieceField(telegram, caret: 10)
+        frozen.frozen = true
+        check(readAll(frozen) == nil, "a proxy that never updates is not read forever")
+        check(DocumentReader.matches(before: "Hello. I want", after: " coffee. Bye", visibleBefore: "I want", visibleAfter: " coffee.")
+              && !DocumentReader.matches(before: "Hello. I want", after: " coffee", visibleBefore: "I wan", visibleAfter: "t coffee"),
+              "the caret must be back where the collected text says")
         // «Перевести» scope: the whole message by default, or the paragraph or sentence around the cursor.
         let message = InputSnapshot(document: uuid, before: "Hi Max.\nI want", after: " coffee. And tea?\nBye", selected: nil, scope: .message)
         check(message.source == "Hi Max.\nI want coffee. And tea?\nBye" && message.trailingUTF16 == 21, "message scope takes the whole field")
@@ -799,4 +843,54 @@ final class AnalysisMockProtocol: URLProtocol {
         client?.urlProtocol(self, didLoad: data); client?.urlProtocolDidFinishLoading(self)
     }
     override func stopLoading() {}
+}
+
+/// A text field as a keyboard sees it: only a piece around the caret, cut at a sentence, a comma or a line.
+final class PieceField {
+    let text: String
+    var caret: Int
+    /// The next read still shows the view from before the last move.
+    var lagging = false
+    /// Moves are ignored.
+    var frozen = false
+    private var staleView: (before: String?, after: String?)?
+
+    init(_ text: String, caret: Int) {
+        self.text = text
+        self.caret = caret
+    }
+
+    private func string(_ range: Range<Int>) -> String {
+        String(decoding: Array(text.utf16)[range], as: UTF16.self)
+    }
+    private var before: String {
+        let full = string(0..<caret)
+        guard full.count > 2 else { return full }
+        let searchEnd = full.index(full.endIndex, offsetBy: -2)
+        var start = full.startIndex
+        for mark in [". ", "! ", "? ", ", ", "\n"] {
+            if let range = full.range(of: mark, options: .backwards, range: full.startIndex..<searchEnd), range.upperBound > start {
+                start = range.upperBound
+            }
+        }
+        return String(full[start...].suffix(25))
+    }
+    private var after: String {
+        let rest = string(caret..<text.utf16.count)
+        if let end = rest.dropFirst().firstIndex(where: { ".,".contains($0) }) { return String(rest[...end].prefix(25)) }
+        return String(rest.prefix(25))
+    }
+
+    func read() -> (before: String?, after: String?) {
+        if let staleView {
+            self.staleView = nil
+            return staleView
+        }
+        return (before, after)
+    }
+    func move(_ offset: Int) {
+        guard !frozen, offset != 0 else { return }
+        if lagging { staleView = (before, after) }
+        caret = max(0, min(text.utf16.count, caret + offset))
+    }
 }

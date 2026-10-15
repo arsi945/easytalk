@@ -27,6 +27,8 @@ final class KeyboardViewController: UIInputViewController, UIGestureRecognizerDe
     private weak var spaceKey: KeyboardKey?
     private var pending: InputSnapshot?
     private var applying = false
+    /// While «Перевести» walks the caret through the field to read it whole, caret moves are not edits.
+    private var readingField = false
     private var connection: ConnectionSettings?
     /// Shared with the app through the App Group; without Full Access iOS gives the keyboard only its own container.
     private lazy var storage: UserDefaults = {
@@ -313,7 +315,7 @@ final class KeyboardViewController: UIInputViewController, UIGestureRecognizerDe
     override func textDidChange(_ textInput: UITextInput?) { super.textDidChange(textInput); fieldChanged() }
     override func selectionDidChange(_ textInput: UITextInput?) { super.selectionDidChange(textInput); fieldChanged() }
     private func fieldChanged() {
-        guard !applying else { return }
+        guard !applying, !readingField else { return }
         recordSentText()
         // Proxy callbacks are frequent during a trackpad drag. Rebuilding the
         // panel mid-touch changes its coordinates and loses responsiveness.
@@ -1193,7 +1195,15 @@ final class KeyboardViewController: UIInputViewController, UIGestureRecognizerDe
         sentDetector.noteDeletion()
         cancelRequest(); clearReward(); translatedSnapshot = nil; note = ""; if let previewDelete { previewDelete() } else { textDocumentProxy.deleteBackward() }; updateAutoShift(); updateSuggestions(); render()
     }
-    private func toggleLanguage() { russian.toggle(); preferences.russianLayout = russian; rebuildKeys(); updateAutoShift() }
+    /// EN/RU always brings back the letters, also from digits and symbols.
+    private func toggleLanguage() {
+        russian.toggle()
+        preferences.russianLayout = russian
+        numbers = false
+        symbols = false
+        rebuildKeys()
+        updateAutoShift()
+    }
     private func toggleNumbers() { numbers.toggle(); symbols = false; shifted = false; rebuildKeys() }
     private func toggleShift() {
         if numbers { symbols.toggle(); rebuildKeys(); return }
@@ -1343,7 +1353,64 @@ final class KeyboardViewController: UIInputViewController, UIGestureRecognizerDe
 
     @objc private func translateInput() {
         if busy { let revision = revisingMeaning; cancelRequest(); showingStudy = revision; note = revision ? "Уточнение отменено. Прежний разбор сохранён." : "Перевод отменён. Текст сохранён."; render(); return }
-        let captured = snapshot()
+        guard !readingField else { return }
+        let visible = snapshot()
+        // A selection is translated as is; otherwise iOS may show only a piece of the message.
+        guard !visible.isSelection, visible.document != nil, previewSnapshot == nil, hasFullAccess, connection != nil else {
+            startTranslation(visible, anchor: visible)
+            return
+        }
+        note = "Читаю сообщение…"
+        render()
+        readWholeField { [weak self] whole in
+            guard let self else { return }
+            let anchor = self.snapshot()
+            self.startTranslation(whole ?? anchor, anchor: anchor)
+        }
+    }
+    /// Walks the caret to the end of the field and back to its start, collecting the text, then puts the caret back.
+    /// Nil when the field is too long, does not respond, or the caret did not return exactly.
+    private func readWholeField(_ completion: @escaping (InputSnapshot?) -> Void) {
+        let proxy = textDocumentProxy
+        let document = EasyTalkDocumentIdentifier(proxy) as UUID?
+        var reader = DocumentReader()
+        readingField = true
+        func finish(_ whole: InputSnapshot?, restore: Int) {
+            if restore != 0 { proxy.adjustTextPosition(byCharacterOffset: restore) }
+            // Let the host report the last caret move before edits count again.
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) { [weak self] in
+                guard let self else { return }
+                self.readingField = false
+                guard let whole else {
+                    completion(nil)
+                    return
+                }
+                let visible = self.snapshot()
+                let back = DocumentReader.matches(before: whole.before ?? "", after: whole.after ?? "",
+                                                  visibleBefore: visible.before, visibleAfter: visible.after)
+                completion(back && visible.document == document ? whole : nil)
+            }
+        }
+        func step() {
+            switch reader.read(before: proxy.documentContextBeforeInput, after: proxy.documentContextAfterInput) {
+            case .move(let offset):
+                proxy.adjustTextPosition(byCharacterOffset: offset)
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.04) { step() }
+            case .wait:
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.04) { step() }
+            case .done(let before, let after, let restore):
+                let scope = self.preferences.translateScope
+                let whole = InputSnapshot(document: document, before: before, after: after, selected: nil, scope: scope)
+                finish(whole, restore: restore)
+            case .failed(let restore):
+                finish(nil, restore: restore)
+            }
+        }
+        step()
+    }
+    /// `captured`: the text to translate (the whole field when it was read); `anchor`: what the proxy shows,
+    /// to notice edits while the request runs.
+    private func startTranslation(_ captured: InputSnapshot, anchor: InputSnapshot) {
         guard let source = captured.source else { note = "Напиши текст в поле сообщения или выдели фрагмент для перевода."; render(); return }
         guard captured.canReplace else { note = "Напиши текст в поле сообщения, затем нажми «Перевести»."; render(); return }
         guard source.unicodeScalars.count <= 2000 else { note = "Выдели фрагмент до 2000 символов."; render(); return }
@@ -1353,7 +1420,7 @@ final class KeyboardViewController: UIInputViewController, UIGestureRecognizerDe
         guard hasFullAccess else { note = "Для перевода включи «Полный доступ» в настройках клавиатуры iPhone."; render(); return }
         config.speakerGender = preferences.speakerGender
         cancelRequest(); clearReward(); let expectedGeneration = generation; let started = Date()
-        pending = captured; busy = true; showingSettings = false; showingStudy = true; showingGame = false; showingVocabulary = false; studyTabs.selectedSegmentIndex = 0; analysisFailed = false; note = "Перевожу… 0 с"; render()
+        pending = anchor; busy = true; showingSettings = false; showingStudy = true; showingGame = false; showingVocabulary = false; studyTabs.selectedSegmentIndex = 0; analysisFailed = false; note = "Перевожу… 0 с"; render()
         progressTimer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
             guard let self, self.busy else { return }
             let action = (self.request?.attempts ?? 1) > 1 ? "Проверяю разбор" : "Перевожу"
@@ -1368,7 +1435,7 @@ final class KeyboardViewController: UIInputViewController, UIGestureRecognizerDe
                 let detail: String
                 switch result {
                 case .success(let analysis):
-                    detail = self.finishTranslation(analysis, captured: captured) ? "OK" : "stale"; if detail != "OK" { self.analysisFailed = true }
+                    detail = self.finishTranslation(analysis, captured: captured, anchor: anchor) ? "OK" : "stale"; if detail != "OK" { self.analysisFailed = true }
                 case .failure(let failure):
                     detail = failure.code; self.analysisFailed = true; self.note = failure.message(details: trace.response) + " Исходный текст сохранён."
                 }
@@ -1379,8 +1446,8 @@ final class KeyboardViewController: UIInputViewController, UIGestureRecognizerDe
             }
         }
     }
-    @discardableResult private func finishTranslation(_ result: LearningResponse, captured: InputSnapshot) -> Bool {
-        guard let source = captured.source, result.isValid(for: source), snapshot() == captured else {
+    @discardableResult private func finishTranslation(_ result: LearningResponse, captured: InputSnapshot, anchor: InputSnapshot? = nil) -> Bool {
+        guard let source = captured.source, result.isValid(for: source), snapshot() == (anchor ?? captured) else {
             note = "Поле или текст изменились. Нажми «Перевести» ещё раз."; return false
         }
         applying = true; defer { applying = false }
@@ -1388,7 +1455,7 @@ final class KeyboardViewController: UIInputViewController, UIGestureRecognizerDe
             guard previewReplace(captured, result.translated) else { note = "Не удалось заменить текст."; return false }
         } else if captured.isSelection { textDocumentProxy.insertText(result.translated) }
         else {
-            // Delete only the accessible paragraph (both sides of the caret); preserve other paragraphs.
+            // Delete only the chosen text on both sides of the caret; the rest of the field stays.
             if captured.trailingUTF16 > 0 { textDocumentProxy.adjustTextPosition(byCharacterOffset: captured.trailingUTF16) }
             for _ in source { textDocumentProxy.deleteBackward() }; textDocumentProxy.insertText(result.translated)
         }
