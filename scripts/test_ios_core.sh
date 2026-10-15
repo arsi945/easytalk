@@ -19,7 +19,7 @@ PY
 fi
 plutil -lint ios/EasyTalk.xcodeproj/project.pbxproj ios/EasyTalk/Info.plist ios/Keyboard/Info.plist
 swiftc -frontend -parse "${FLAGS[@]}" ios/EasyTalk/AppDelegate.swift ios/Keyboard/KeyboardViewController.swift
-swiftc "${FLAGS[@]}" Sources/EasyTalkCore/Contracts.swift Sources/EasyTalkCore/Learning.swift Sources/EasyTalkCore/StudyContent.swift Sources/EasyTalkCore/IdiomCatalog.swift Sources/EasyTalkCore/CursorNavigation.swift Sources/EasyTalkCore/TypingRules.swift Sources/EasyTalkCore/WordSuggestions.swift \
+swiftc "${FLAGS[@]}" Sources/EasyTalkCore/Contracts.swift Sources/EasyTalkCore/Learning.swift Sources/EasyTalkCore/StudyContent.swift Sources/EasyTalkCore/IdiomCatalog.swift Sources/EasyTalkCore/CursorNavigation.swift Sources/EasyTalkCore/TypingRules.swift Sources/EasyTalkCore/WordSuggestions.swift Sources/EasyTalkCore/DocumentReader.swift \
   ios/Shared/ConnectionSettings.swift ios/Shared/SharedStorage.swift ios/Shared/LearningStore.swift ios/Shared/InputHistory.swift ios/Shared/ContextExport.swift ios/Shared/ContextExportPrompt.swift ios/Shared/KeyboardPreferences.swift ios/Shared/StudyPractice.swift ios/Shared/SecondSkillCards.swift ios/Shared/AnalysisPrompt.swift \
   ios/Shared/AnalysisService.swift ios/Shared/StudyActionsPrompt.swift ios/Shared/StudyActionService.swift ios/Tests/LearningTests.swift \
   -o build/ios-learning-tests
